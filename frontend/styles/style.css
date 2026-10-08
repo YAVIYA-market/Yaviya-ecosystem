@@ -3332,7 +3332,8 @@ body.orders-focus > .mobile-footbar {
 body.window-open {
   overflow: hidden;
 }
-body.window-open > :not(dialog):not(#toast) {
+body.window-open > :not(dialog):not(#toast):not(#__next),
+body.window-open #yaviya-marketplace > :not(dialog):not(#toast) {
   visibility: hidden !important;
 }
 #modal.full-page {
