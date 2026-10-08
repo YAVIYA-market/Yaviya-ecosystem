@@ -54,12 +54,9 @@ export default function PopularQuestions({
         </label>
       </div>
       <div className="yv-faq-list">
-        {results.map((q, i) => (
+        {results.map((q) => (
           <details key={q.id} className="yv-faq">
             <summary>
-              <span className="yv-faq-number">
-                {String(i + 1).padStart(2, "0")}
-              </span>
               <span>{q[lang][0]}</span>
               <span className="yv-faq-toggle" aria-hidden="true">
                 +

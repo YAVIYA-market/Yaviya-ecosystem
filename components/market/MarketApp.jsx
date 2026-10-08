@@ -1153,11 +1153,11 @@ export default function MarketApp({ data, pageName = "index", content = [] }) {
               onContact={() => setScreen({ type: "contact" })}
             />
             <section className="yv-seller-banner">
-              <h2>Votre boutique mérite une nouvelle vitrine.</h2>
-              <p>
-                Faites découvrir vos produits et préparez votre présence sur
-                YAVIYA.
-              </p>
+              <div className="yv-seller-banner-copy">
+                <p className="yv-eyebrow">{t("VENDRE SUR YAVIYA", "SELL ON YAVIYA")}</p>
+                <h2>{t("Donnez une nouvelle vitrine à votre boutique.", "Give your shop a new storefront.")}</h2>
+                <p>{t("Présentez vos produits, gérez vos commandes et échangez avec vos clients depuis votre espace vendeur.", "Showcase your products, manage orders and connect with customers from your seller workspace.")}</p>
+              </div>
               <div className="yv-actions">
                 <button
                   className="yv-primary"

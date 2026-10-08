@@ -1338,15 +1338,6 @@ hr {
 .yv-faq-list summary::-webkit-details-marker {
   display: none;
 }
-.yv-faq-number {
-  font-size: 12px;
-  font-weight: 700;
-  color: #bd560e;
-  background: #fff2e8;
-  padding: 8px;
-  border-radius: 8px;
-  flex-shrink: 0;
-}
 .yv-faq-toggle {
   margin-left: auto;
   color: #e85d04;
@@ -1862,4 +1853,17 @@ hr {
   .yv-footer-brand p { max-width: none; }
   .yv-footer-group { gap: 7px; }
   .yv-footer > .yv-footer-bottom { flex-direction: column; align-items: flex-start; }
+}
+
+/* Seller invitation: clear content and separate actions. */
+.yv-seller-banner { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 32px; background: #fff4e9; color: var(--yv-text); border: 1px solid #f5d7bb; padding: 32px; }
+.yv-seller-banner h2 { max-width: 640px; font-size: clamp(26px, 2.8vw, 36px); line-height: 1.15; margin: 10px 0 14px; }
+.yv-seller-banner-copy > p:not(.yv-eyebrow) { max-width: 660px; margin: 0; color: #655647; line-height: 1.65; font-size: 15px; }
+.yv-seller-banner .yv-actions { flex-direction: column; align-items: stretch; margin: 0; gap: 10px; min-width: 190px; }
+.yv-seller-banner .yv-actions button { padding: 13px 22px; border-radius: 12px; font-size: 14px; font-weight: 650; }
+.yv-seller-banner .yv-actions button:not(.yv-primary) { background: white; border: 1px solid #debea3; color: #713f12; }
+@media(max-width: 700px) {
+  .yv-seller-banner { grid-template-columns: minmax(0, 1fr); gap: 22px; padding: 24px; }
+  .yv-seller-banner .yv-actions { width: 100%; min-width: 0; }
+  .yv-seller-banner-copy > p:not(.yv-eyebrow) { font-size: 14px; }
 }
