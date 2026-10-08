@@ -34,3 +34,15 @@ npx expo export --platform android --platform ios
 ```
 
 Recette sur téléphone requise : inscription, connexion persistante, achat, suivi, rôles autorisés, retour, photos/KYC, clavier et coupure réseau. Les erreurs API et les paiements simulés du site ne sont pas corrigés par l’enveloppe mobile. Notifications push, mode hors ligne, paiements natifs et publication dans les boutiques ne sont pas inclus. Aucune publication automatique du site ou des stores.
+
+## Builds depuis GitHub
+
+Le workflow manuel `.github/workflows/mobile-build.yml` valide le code puis lance le build EAS choisi (Android, iOS ou les deux). Il ne publie rien dans les stores. Avant son premier lancement :
+
+1. Se connecter avec `npx eas-cli@latest login` et lancer `npx eas-cli@latest init` dans `mobile/`.
+2. Committer `expo.extra.eas.projectId` généré dans app.json. Ne pas inventer cet identifiant.
+3. Effectuer le premier build interactif de chaque plateforme pour créer/configurer les certificats : `npx eas-cli@latest build --platform android --profile preview` (puis iOS si compte Apple Developer disponible).
+4. Créer un jeton sur https://expo.dev/accounts et l’ajouter uniquement comme secret GitHub `EXPO_TOKEN` dans Settings → Secrets and variables → Actions. Ne pas le transmettre dans une conversation ni le committer.
+5. Après intégration du workflow dans la branche par défaut, lancer Actions → YAVIYA Mobile build → Run workflow.
+
+L’URL de téléchargement est fournie par EAS une fois le build terminé. Un export JavaScript réussi ne constitue pas un APK/IPA signé.
