@@ -22,7 +22,7 @@ function ReviewCard({ row, country, config, busy, onDecide }) {
             <div><dt>Pays de la pièce</dt><dd>{issuingCountry}</dd></div>
             <div><dt>Document</dt><dd>{row.documentType === "licence-c" ? "Permis de conduire C" : "Pièce d’identité"}</dd></div>
             {seller && <div><dt>Statut de l’activité</dt><dd>{row.unregistered ? "Activité sans RCCM déclaré" : row.companyRcm || "RCCM à contrôler"}</dd></div>}
-            <div><dt>Abonnement choisi</dt><dd>{seller ? row.sellerPlan || "Non renseigné" : row.courierPlan || "Non renseigné"}</dd></div>
+            <div><dt>Abonnement choisi</dt><dd>{seller ? ({ free: "Gratuit", plus: "Plus", premium: "Premium", business: "Business", enterprise: "Entreprise" }[row.sellerPlan] || row.sellerPlan || "Non renseigné") : row.courierPlan === "standard" ? "Standard" : row.courierPlan || "Non renseigné"}</dd></div>
             <div><dt>Soumis le</dt><dd>{row.submittedAt ? new Date(Number(row.submittedAt)).toLocaleDateString("fr-FR") : "Non renseigné"}</dd></div>
           </dl>
           <a className="yv-review-document" target="_blank" rel="noreferrer" href={"/api/verification/document?userId=" + encodeURIComponent(row.userId) + "&country=" + country}>
