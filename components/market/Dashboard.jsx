@@ -482,7 +482,7 @@ export default function Dashboard({
       : []),
   ];
   return (
-    <section className="yv-dashboard">
+    <section className="yv-dashboard" data-role={role}>
       <p className="yv-eyebrow">
         {role === "seller"
           ? "PANNEAU VENDEUR"
@@ -493,18 +493,17 @@ export default function Dashboard({
       <div className="yv-dashboard-title">
         <h2>
           {role === "seller"
-            ? state.profile?.name + " · ma boutique"
+            ? (state.profile?.name ? state.profile.name + " · Ma boutique" : "Ma boutique")
             : role === "courier"
               ? "Mes missions, mon activité"
               : "Piloter YAVIYA"}
         </h2>
         <span>
-          {state.profile?.sellerNumber ||
-            state.profile?.courierNumber ||
-            state.profile?.customerNumber}
+          {role === "seller" ? state.profile?.sellerNumber : role === "courier" ? state.profile?.courierNumber : state.profile?.customerNumber}
         </span>
         <button onClick={onRefresh}>Actualiser</button>
       </div>
+      <p className="yv-dashboard-description">{role === "seller" ? "Votre boutique, vos commandes et vos clients : tous vos outils au même endroit." : role === "courier" ? "Organisez vos missions, suivez vos livraisons et retrouvez vos règlements." : "Supervisez l’activité, vérifiez les comptes et accompagnez les vendeurs et livreurs."}</p>
       <div className="yv-dashboard-layout">
         <nav className="yv-tabs" aria-label="Navigation de mon espace">
           {tabs.map(([id, label]) => (

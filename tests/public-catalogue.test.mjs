@@ -14,6 +14,9 @@ test("public catalogue exposes only approved products, with no account or order 
     assert.equal(r.status, 200);
     const value = await r.json();
     assert.equal(value.catalogue.length, 60);
+    const promo = value.catalogue.find(p => p.id === 3);
+    assert.equal(promo.price, 85500);
+    assert.equal(promo.regularPrice, 95000);
     assert.equal(value.catalogue[0].stock, 15);
     assert.equal(Object.hasOwn(value.catalogue[0], "owner_user_id"), false);
     assert.equal(Object.hasOwn(value, "orders"), false);

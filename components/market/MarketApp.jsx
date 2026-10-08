@@ -1,4 +1,5 @@
 import Head from "next/head";
+import ProductPrice from "./ProductPrice";
 import VerifiedSellerBadge from "./VerifiedSellerBadge";
 import { useCallback, useEffect, useState } from "react";
 import { api, amount, imageUrl } from "../../lib/market/api";
@@ -169,7 +170,7 @@ function ProductDetail({
               "Vérification en cours"
             )}
           </p>
-          <strong className="yv-price">{amount(product.price, country)}</strong>
+          <ProductPrice product={product} country={country} />
           <p>{product.desc}</p>
           <p className="yv-demo-rating">
             ★ {demoRating(product).toFixed(1)} / 5 · note illustrative
@@ -707,14 +708,14 @@ export default function MarketApp({ data, pageName = "index", content = [] }) {
           YAVIYA<span>●</span>
         </a>
         <div className="yv-header-actions">
-          <button onClick={() => setScreen({ type: "wishlist" })}>
-            <Icon name="heart" />
-            <span>{t("Favoris", "Favourites")}</span>
-          </button>
           <a className="yv-home-link" href={country === "CG" ? "/congo.html" : "/"}>
             <Icon name="home" />
             <span>{t("Accueil", "Home")}</span>
           </a>
+          <button onClick={() => setScreen({ type: "wishlist" })}>
+            <Icon name="heart" />
+            <span>{t("Favoris", "Favourites")}</span>
+          </button>
           <button onClick={() => setScreen({ type: "cart" })}>
             <Icon name="cart" />
             <span>
@@ -894,9 +895,7 @@ export default function MarketApp({ data, pageName = "index", content = [] }) {
                         SÉLECTION · DÉMO
                       </span>
                       <h3>{p.title}</h3>
-                      <strong className="yv-price">
-                        {amount(p.price, country)}
-                      </strong>
+                      <ProductPrice product={p} country={country} />
                       <p>Découvrez l’offre et comparez les boutiques.</p>
                       <button
                         className="yv-primary"
@@ -1094,7 +1093,7 @@ export default function MarketApp({ data, pageName = "index", content = [] }) {
                           compact
                         />
                       </button>
-                      <b className="yv-price">{amount(p.price, country)}</b>
+                      <ProductPrice product={p} country={country} />
                       {config.demoBuyerCounts[p.id]?.title === p.title ? (
                         <small>
                           {config.demoBuyerCounts[p.id].count} acheteurs · démo

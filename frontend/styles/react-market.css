@@ -1878,3 +1878,28 @@ hr {
   .yv-header-actions button, .yv-header-actions .yv-home-link { min-width: 44px; }
 }
 @media(max-width: 350px) { .yv-header .yv-logo { font-size: 20px; } }
+/* Subtle carousel selectors keep campaign names in accessible labels only. */
+.yv-hero-dots { gap: 4px; }
+.yv-hero-dots button { padding: 10px; width: 36px; height: 36px; display: grid; place-items: center; border: 0; background: transparent; }
+.yv-hero-dots button span { width: 8px; height: 8px; border-radius: 50%; background: #b9b1a9; }
+.yv-hero-dots button[aria-pressed="true"] { background: transparent; }
+.yv-hero-dots button[aria-pressed="true"] span { width: 20px; border-radius: 6px; background: var(--yv-orange); }
+.yv-product-pricing { display: flex; flex-wrap: wrap; align-items: baseline; gap: 7px 10px; }
+.yv-product-pricing del { color: #78716c; font-size: 14px; }
+.yv-discount { padding: 3px 7px; border-radius: 6px; font-size: 12px; font-weight: 750; color: #9a3412; background: #ffedd5; }
+.yv-dashboard { background: #f8fafc; padding: 22px; border-radius: 16px; }
+.yv-dashboard-title { gap: 12px; margin-bottom: 10px; }
+.yv-dashboard-title > span { padding: 6px 10px; border-radius: 8px; background: #eef2f6; color: #475569; font-size: 13px; }
+.yv-dashboard-description { margin: 0 0 24px; color: #64748b; font-size: 14px; line-height: 1.65; }
+.yv-dashboard-layout > .yv-tabs { background: white; border: 1px solid #e2e8f0; border-radius: 14px; padding: 10px; gap: 5px; }
+.yv-dashboard-layout > .yv-tabs button { border: 0; background: transparent; padding: 12px; border-radius: 9px; font-size: 14px; color: #475569; }
+.yv-dashboard-layout > .yv-tabs button[aria-pressed="true"] { background: #fff1e6; color: #a33f08; font-weight: 750; }
+.yv-dashboard-body { padding: 22px; background: white; border: 1px solid #e2e8f0; border-radius: 14px; }
+.yv-dashboard-body .yv-stat-grid > p { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px; }
+.yv-workspace-intro { padding: 20px; border: 1px solid #e2e8f0; background: #f8fafc; border-radius: 16px; }
+@media(max-width: 600px) {
+  .yv-dashboard { padding: 12px; }
+  .yv-dashboard-body { padding: 16px; }
+  .yv-dashboard-layout > .yv-tabs button { padding: 10px; font-size: 13px; }
+  .yv-dashboard-title h2 { font-size: 24px; line-height: 1.2; }
+}

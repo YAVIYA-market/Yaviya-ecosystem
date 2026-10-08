@@ -182,6 +182,10 @@ try {
     2,
     "promos du jour restaurées",
   );
+  assert.equal(document.querySelectorAll('.yv-daily-grid del').length, 2, 'anciens prix de promotion affichés');
+  assert.match(document.querySelector('.yv-daily-grid del').textContent, /95/);
+  assert.equal(document.querySelector('.yv-hero-dots').textContent.trim(), '', 'indicateurs du carrousel sans noms visibles');
+  assert.deepEqual([...document.querySelectorAll('.yv-header-actions > *')].map(e => e.textContent.trim().replace(/\s+\d+$/, '')), ['Accueil', 'Favoris', 'Panier', 'Profil']);
   assert.equal(
     document.querySelectorAll(".yv-workspace-nav button").length,
     4,

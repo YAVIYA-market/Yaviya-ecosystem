@@ -37,7 +37,7 @@ export default function HeroCarousel({ country, t, onService }) {
       </div><div className="yv-hero-frame"><img src={slide.image} alt={slide.label} /></div>
     </article>
     <div className="yv-hero-controls">
-      <div className="yv-hero-dots">{slides.map((s, i) => <button key={s.id} aria-label={s.label} aria-pressed={index === i} onClick={() => setIndex(i)}>{s.label}</button>)}</div>
+      <div className="yv-hero-dots">{slides.map((s, i) => <button key={s.id} aria-label={s.label} aria-pressed={index === i} onClick={() => setIndex(i)}><span aria-hidden="true" /></button>)}</div>
       <button onClick={() => { if (reduced) setIndex(i => (i + 1) % slides.length); else setPaused(p => !p); }}>{reduced ? t("Suivant", "Next") : paused ? t("Lecture", "Play") : t("Pause", "Pause")}</button>
     </div>
   </section>;

@@ -24,6 +24,7 @@ export async function handlePublicCatalogue(request, env) {
           "category",
           "subcategory",
           "price",
+          "regularPrice",
           "stock",
           "visible",
           "approved",
