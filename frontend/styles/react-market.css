@@ -407,8 +407,8 @@ hr {
   font-size: 12px;
   text-align: left;
 }
-.yv-shop-link span {
-  color: #15803d;
+.yv-shop-link .yv-verified-badge {
+  color: #2563eb;
 }
 .yv-price {
   font-size: 21px;
