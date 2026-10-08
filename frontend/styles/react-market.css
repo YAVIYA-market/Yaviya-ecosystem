@@ -2092,3 +2092,6 @@ hr {
 .yv-chat-question-grid button:hover { background:#fff7ed; border-color:#ea580c; }
 .yv-chat-question-grid button:focus-visible { outline:2px solid #ea580c; outline-offset:3px; }
 @media(max-width:600px) { .yv-chat-question-grid { grid-template-columns:minmax(0,1fr); } }
+
+.yv-chat-question-grid { display:flex; flex-wrap:wrap; gap:9px; }
+.yv-chat-question-grid button { flex:0 1 auto; border-radius:24px; padding:10px 15px; }

@@ -41,8 +41,20 @@ function Icon({ name }) {
 }
 function Support({ faq, lang, user, country, onContact }) {
   const conversation = useRef(null);
-  const suggestedIds = ["order", "tracking", "fees", "payment", "returns", "verified", "coins", "contact"];
-  const suggestions = suggestedIds.map(id => faq.find(q => q.id === id)).filter(Boolean);
+  const topics = [
+    { id: "delivery", fr: "Livraison", en: "Delivery" },
+    { id: "returns", fr: "Remboursement", en: "Refund" },
+    { id: "account", fr: "Problème de compte", en: "Account issue" },
+    { id: "coins", fr: "Coupon", en: "Coupon" },
+    { id: "order", fr: "Commander", en: "Place an order" },
+    { id: "tracking", fr: "Suivi de commande", en: "Order tracking" },
+    { id: "payment", fr: "Paiement", en: "Payment" },
+    { id: "contact", fr: "Service client", en: "Customer service" },
+  ];
+  const accountHelp = lang === "en"
+    ? "Check the email address or phone number used to create your account, then enter your password. If two-factor authentication is enabled, enter the requested verification code. If you still cannot access your account, contact customer service and describe the error without sharing your password or verification codes."
+    : "Vérifiez l’e-mail ou le numéro de téléphone utilisé pour créer votre compte, puis saisissez votre mot de passe. Si la double authentification est activée, renseignez le code demandé. Si l’accès reste bloqué, contactez le service client en décrivant le message d’erreur, sans transmettre votre mot de passe ni vos codes de connexion.";
+  const suggestions = topics.map(topic => ({...topic, answer: topic.id === "account" ? accountHelp : faq.find(q => q.id === topic.id)?.[lang][1]})).filter(topic => topic.answer);
   const [messages, setMessages] = useState([
     {
       answer:
@@ -99,10 +111,10 @@ function Support({ faq, lang, user, country, onContact }) {
             </div>
           ))}
         </div>
-        <div className="yv-chat-suggestions" aria-label={lang === "en" ? "Suggested questions" : "Questions suggérées"}>
-          <p>{lang === "en" ? "Choose a question to get an answer:" : "Choisissez une question pour obtenir une réponse :"}</p>
+        <div className="yv-chat-suggestions" aria-label={lang === "en" ? "Help topics" : "Sujets d’aide"}>
+          <p>{lang === "en" ? "Choose a topic:" : "Choisissez un sujet :"}</p>
           <div className="yv-chat-question-grid">
-            {suggestions.map(q => <button type="button" key={q.id} data-question-id={q.id} onClick={() => ask(q[lang][0], q[lang][1])}>{q[lang][0]}</button>)}
+            {suggestions.map(q => <button type="button" key={q.id} data-question-id={q.id} onClick={() => ask(q[lang], q.answer)}>{q[lang]}</button>)}
           </div>
         </div>
         <form onSubmit={send} className="yv-form">

@@ -6,7 +6,7 @@ Ces changements concernent la branche de prévisualisation `migration/nextjs` (P
 
 - En-tête : Accueil, Favoris, Panier, Notifications, Profil. La cloche présente les mises à jour des commandes accessibles au compte connecté. Les marqueurs de lecture sont conservés dans ce navigateur, séparés par compte et marché.
 - Navigation : Pourquoi YAVIYA ouvre un contenu marketing détaillé sur les avantages publics, avec liens vers le catalogue, l’inscription vendeur et l’aide ; aucune information interne n’y figure.
-- Chatbot : huit questions suggérées sélectionnables (achat, suivi, frais, paiement, retours sous 72 h, vendeurs vérifiés, coupons, service client), affichant directement la réponse correspondante.
+- Chatbot : huit sujets courts sélectionnables (Livraison, Remboursement, Problème de compte, Coupon, Commander, Suivi de commande, Paiement, Service client), affichant directement la réponse correspondante.
 - Chatbot : bouton flottant avec icône, compact sur mobile, qui ouvre l’assistant FAQ et le centre d’aide existants.
 - Pied de page : À propos remplace les forfaits vendeurs ; Revendre un produit ouvre la création du compte vendeur puis son dossier. Les frais de livraison détaillés restent dans la commande après choix de l’adresse.
 - Inscription vendeur : Compte et coordonnées → Activité → Identité et confidentialité → Choisir mon abonnement. RCCM obligatoire sauf déclaration de petite entreprise non enregistrée ; pièce d’identité obligatoire, conservée entre les étapes.

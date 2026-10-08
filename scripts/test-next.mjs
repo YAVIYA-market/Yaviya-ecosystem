@@ -330,12 +330,14 @@ try {
   await until(() => !document.querySelector("dialog"), "fermeture paiements");
   document.querySelector('.yv-chatbot-launcher').click();
   await until(()=>document.querySelector('.yv-chat-question-grid'),'questions proposées du chatbot');
-  assert.equal(document.querySelectorAll('.yv-chat-question-grid button').length,8);
+  assert.deepEqual([...document.querySelectorAll('.yv-chat-question-grid button')].map(b=>b.textContent),['Livraison','Remboursement','Problème de compte','Coupon','Commander','Suivi de commande','Paiement','Service client']);
   document.querySelector('.yv-chat-question-grid [data-question-id="returns"]').click();
   await until(()=>document.querySelector('.yv-chat-conversation')?.textContent.includes('72 heures'),'réponse retour sous 72 heures');
   assert.match(document.querySelector('.yv-chat-conversation').textContent,/72 heures suivant la réception/);
   document.querySelector('.yv-chat-question-grid [data-question-id="tracking"]').click();
-  await until(()=>document.querySelector('.yv-chat-conversation')?.textContent.includes('Où retrouver et suivre ma commande'),'question de suivi envoyée');
+  await until(()=>document.querySelector('.yv-chat-conversation')?.textContent.includes('Suivi de commande'),'question de suivi envoyée');
+  document.querySelector('.yv-chat-question-grid [data-question-id="account"]').click();
+  await until(()=>document.querySelector('.yv-chat-conversation')?.textContent.includes('Vérifiez l’e-mail ou le numéro de téléphone'),'aide sur le problème de compte');
   document.querySelector('dialog button[aria-label="Fermer"]').click();
   await until(()=>!document.querySelector('dialog'),'fermeture chatbot');
   assert.ok([...document.querySelectorAll('.yv-footer button')].some(b=>b.textContent.includes('Retours et remboursements · 72 h')));
