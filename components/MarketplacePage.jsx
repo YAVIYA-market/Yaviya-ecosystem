@@ -1,10 +1,12 @@
 import Head from 'next/head';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import styles from './PageStatus.module.css';
 
 // Transitional boundary: Next owns routing/rendering; the established marketplace
 // still owns its DOM inside this boundary until each feature is ported to React.
 export default function MarketplacePage({ page }) {
   const started = useRef(false);
+  const [loadFailed, setLoadFailed] = useState(false);
   useEffect(() => {
     if (started.current) return;
     started.current = true;
@@ -24,8 +26,7 @@ export default function MarketplacePage({ page }) {
     }
     boot().catch(error => {
       console.error(error);
-      const toast = document.querySelector('#toast');
-      if (toast) { toast.textContent = 'Chargement interrompu. Actualisez la page.'; toast.classList.add('show'); }
+      setLoadFailed(true);
     });
   }, [page]);
   return <>
@@ -34,7 +35,16 @@ export default function MarketplacePage({ page }) {
       <meta name="description" content={page.description} />
       <meta name="viewport" content="width=device-width, initial-scale=1" />
       <link rel="stylesheet" href="/style.css" />
+      <link rel="icon" href="/yaviya-icon.svg" type="image/svg+xml" />
+      <meta name="theme-color" content="#f97316" />
+      {page.scripts.map(src => <link key={src} rel="preload" href={src} as="script" />)}
     </Head>
+    {loadFailed ? <aside className={styles.notice} role="alert">
+      <strong>Le chargement de YAVIYA a été interrompu.</strong>
+      <span>Vérifiez votre connexion, puis rechargez la page pour continuer.</span>
+      <button type="button" onClick={() => window.location.reload()}>Réessayer</button>
+    </aside> : null}
+    <noscript><p className={styles.notice}>Activez JavaScript pour utiliser le panier, votre compte et le suivi des commandes.</p></noscript>
     <div id="yaviya-marketplace" dangerouslySetInnerHTML={{ __html: page.markup }} />
   </>;
 }
