@@ -38,7 +38,9 @@ export default function HeroCarousel({ country, t, onService }) {
     </article>
     <div className="yv-hero-controls">
       <div className="yv-hero-dots">{slides.map((s, i) => <button key={s.id} aria-label={s.label} aria-pressed={index === i} onClick={() => setIndex(i)}><span aria-hidden="true" /></button>)}</div>
-      <button onClick={() => { if (reduced) setIndex(i => (i + 1) % slides.length); else setPaused(p => !p); }}>{reduced ? t("Suivant", "Next") : paused ? t("Lecture", "Play") : t("Pause", "Pause")}</button>
+      <button className="yv-hero-playback" aria-label={reduced ? t("Visuel suivant", "Next slide") : paused ? t("Reprendre le défilement", "Resume slideshow") : t("Arrêter le défilement", "Stop slideshow")} onClick={() => { if (reduced) setIndex(i => (i + 1) % slides.length); else setPaused(p => !p); }}>
+        <svg viewBox="0 0 24 24" aria-hidden="true">{reduced ? <path d="m9 5 7 7-7 7"/> : paused ? <path d="m8 5 11 7-11 7Z"/> : <><path d="M8 5v14"/><path d="M16 5v14"/></>}</svg>
+      </button>
     </div>
   </section>;
 }

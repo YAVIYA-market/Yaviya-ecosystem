@@ -308,6 +308,7 @@ export default function MarketApp({ data, pageName = "index", content = [] }) {
     [cart, setCart] = useState([]),
     [wishes, setWishes] = useState([]),
     [compare, setCompare] = useState([]);
+  const cartCount = cart.reduce((total, item) => total + item.q, 0);
   const buyerCounts = useBuyerCounts(products, country);
   const following = useSellerFollows(user, country);
   function becomeSeller() {
@@ -781,10 +782,10 @@ export default function MarketApp({ data, pageName = "index", content = [] }) {
             <Icon name="heart" />
             <span>{t("Favoris", "Favourites")}</span>
           </button>
-          <button onClick={() => setScreen({ type: "cart" })}>
+          <button className="yv-cart-button" onClick={() => setScreen({ type: "cart" })}>
             <Icon name="cart" />
             <span>
-              {t("Panier", "Cart")} <b>{cart.reduce((n, i) => n + i.q, 0)}</b>
+              {t("Panier", "Cart")}{cartCount > 0 && <> <b>{cartCount}</b></>}
             </span>
           </button>
           <Notifications user={user} profile={profile} country={country} lang={lang} onSignIn={() => setScreen({ type: "auth" })} onOrders={(role) => account(role === "buyer" ? "orders" : "dashboard", role)} />

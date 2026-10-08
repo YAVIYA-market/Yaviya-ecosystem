@@ -4,6 +4,8 @@ Ces changements concernent la branche de prévisualisation `migration/nextjs` (P
 
 ## Interface et parcours
 
+- Panier : aucun nombre affiché lorsqu’il est vide ; compteur de quantité visible après ajout et masqué après retrait du dernier article.
+- Carrousel : commande de défilement par icône, sans mot Pause visible.
 - En-tête : Accueil, Favoris, Panier, Notifications, Profil. La cloche présente les mises à jour des commandes accessibles au compte connecté. Les marqueurs de lecture sont conservés dans ce navigateur, séparés par compte et marché.
 - Navigation : Pourquoi YAVIYA ouvre un contenu marketing détaillé sur les avantages publics, avec liens vers le catalogue, l’inscription vendeur et l’aide ; aucune information interne n’y figure.
 - Chatbot : huit sujets courts sélectionnables (Livraison, Remboursement, Problème de compte, Coupon, Commander, Suivi de commande, Paiement, Service client), affichant directement la réponse correspondante.

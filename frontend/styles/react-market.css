@@ -2095,3 +2095,6 @@ hr {
 
 .yv-chat-question-grid { display:flex; flex-wrap:wrap; gap:9px; }
 .yv-chat-question-grid button { flex:0 1 auto; border-radius:24px; padding:10px 15px; }
+
+.yv-hero-controls .yv-hero-playback { display:grid; place-items:center; width:44px; height:44px; padding:10px; }
+.yv-hero-playback svg { width:22px; height:22px; fill:none; stroke:currentColor; stroke-width:2.4; stroke-linecap:round; stroke-linejoin:round; }

@@ -191,6 +191,18 @@ try {
     4,
     "quatre vues séparées",
   );
+  assert.equal(document.querySelector('.yv-cart-button b'),null,'aucun compteur pour le panier vide');
+  document.querySelector('.yv-product .yv-actions button').click();
+  await until(()=>document.querySelector('.yv-cart-button b')?.textContent==='1','compteur après ajout au panier');
+  document.querySelector('.yv-product .yv-actions button').click();
+  await until(()=>document.querySelector('.yv-cart-button b')?.textContent==='2','compteur de quantité');
+  document.querySelector('.yv-cart-button').click();
+  await until(()=>document.querySelector('.yv-cart-item'),'panier ouvert');
+  click('Retirer');
+  await until(()=>!document.querySelector('.yv-cart-button b'),'compteur masqué après retrait du dernier article');
+  document.querySelector('dialog button[aria-label="Fermer"]').click();
+  await until(()=>!document.querySelector('dialog'),'fermeture panier');
+  assert.ok(!document.querySelector('.yv-hero-controls').textContent.includes('Pause'),'mot Pause retiré');
   document.querySelector('.yv-product-title').click();
   await until(()=>document.querySelector('.yv-product-gallery'),'galerie de photos');
   const firstPhoto = document.querySelector('.yv-detail-photo').src;
