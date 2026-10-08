@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { api } from "../../lib/market/api";
-export default function AuthForm({ country, onSuccess }) {
+export default function AuthForm({ country, onSuccess, initialAction = "login" }) {
+  const [action, setAction] = useState(initialAction);
   const [mode, setMode] = useState("email"),
     [phoneCountry, setPhoneCountry] = useState(country);
   const [login, setLogin] = useState(""),
@@ -65,7 +66,7 @@ export default function AuthForm({ country, onSuccess }) {
     }
   }
   return (
-    <form className="yv-form" onSubmit={(e) => submit(e, "login")}>
+    <form className="yv-form" onSubmit={(e) => submit(e, action)}>
       <p>
         Votre accès personnel pour retrouver vos achats et suivre vos
         livraisons.
@@ -185,15 +186,15 @@ export default function AuthForm({ country, onSuccess }) {
           ? "Connexion…"
           : factor
             ? "Vérifier et continuer"
-            : "Se connecter"}
+            : action === "signup" ? "Créer mon compte" : "Se connecter"}
       </button>
       {!factor && (
         <button
           type="button"
           disabled={busy}
-          onClick={(e) => submit(e, "signup")}
+          onClick={() => setAction(action === "signup" ? "login" : "signup")}
         >
-          Créer mon compte
+          {action === "signup" ? "J’ai déjà un compte" : "Créer un compte"}
         </button>
       )}
     </form>

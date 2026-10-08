@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import { api, amount, imageUrl } from "../../lib/market/api";
 import Modal from "./Modal";
 import AuthForm from "./AuthForm";
+import PhotoSearch from "./PhotoSearch";
 import ProfileForm from "./ProfileForm";
 import Onboarding from "./Onboarding";
 import Checkout from "./Checkout";
@@ -15,6 +16,7 @@ function Icon({ name }) {
     cart: "M3 3h2l3 13h11l2-9H6 M9 20h.01 M18 20h.01",
     heart: "M12 21 3 12a5 5 0 0 1 9-6 5 5 0 0 1 9 6Z",
     user: "M4 22v-3a8 8 0 0 1 16 0v3 M16 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0",
+    camera: "M3 7h4l2-3h6l2 3h4v13H3Z M16 13a4 4 0 1 1-8 0 4 4 0 0 1 8 0",
     search: "M16 10a6 6 0 1 1-12 0 6 6 0 0 1 12 0 M15 15l6 6",
   };
   return (
@@ -341,6 +343,11 @@ export default function MarketApp({ data, pageName = "index", content = [] }) {
     setBusy(true);
     setError("");
     setPending(selection);
+    if (!user) {
+      setScreen({ type: "auth", action: "signup" });
+      setBusy(false);
+      return;
+    }
     try {
       const s = await api("/api/auth/session");
       setUser(s.user);
@@ -450,8 +457,13 @@ export default function MarketApp({ data, pageName = "index", content = [] }) {
         ? a.price - b.price
         : sort === "desc"
           ? b.price - a.price
-          : sort === "rating"
-            ? (b.rating || 0) - (a.rating || 0)
+          : sort === "verified"
+            ? Number(!!shops.find(s => s.id === b.seller)?.reviewed) - Number(!!shops.find(s => s.id === a.seller)?.reviewed)
+            : sort === "az" ? a.title.localeCompare(b.title, "fr")
+            : sort === "za" ? b.title.localeCompare(a.title, "fr")
+            : sort === "newest" ? Number(b.id) - Number(a.id)
+            : sort === "oldest" ? Number(a.id) - Number(b.id)
+            : sort === "popular" ? (config.demoBuyerCounts[b.id]?.count || 0) - (config.demoBuyerCounts[a.id]?.count || 0)
             : 0,
     );
   const chosen = screen?.product;
@@ -465,7 +477,8 @@ export default function MarketApp({ data, pageName = "index", content = [] }) {
   }
   let title =
     {
-      auth: "Mon compte YAVIYA",
+      auth: screen?.action === "signup" ? "Créer mon compte acheteur" : "Mon compte YAVIYA",
+      "photo-search": "Recherche par photo",
       profile: "Mes coordonnées",
       onboarding:
         screen?.role === "seller" ? "Devenir vendeur" : "Devenir livreur",
@@ -545,6 +558,9 @@ export default function MarketApp({ data, pageName = "index", content = [] }) {
               "What would you like today?",
             )}
           />
+          <button type="button" aria-label="Rechercher avec une photo" title="Rechercher avec une photo" onClick={() => setScreen({ type: "photo-search" })}>
+            <Icon name="camera" />
+          </button>
           <button aria-label="Rechercher">
             <Icon name="search" />
           </button>
@@ -642,6 +658,10 @@ export default function MarketApp({ data, pageName = "index", content = [] }) {
               </div>
               <img src="/hero.png" alt="Sélection YAVIYA" />
             </section>
+            <section className="yv-adverts" aria-label="Publicités et sélections">
+              {[{image:"headphones.png", title:"Votre musique. Votre rythme.", category:"électronique"}, {image:"sneakers.png", title:"Un pas de plus. Du style en plus.", category:"mode"}, {image:"handbag.png", title:"Emportez l’essentiel avec élégance.", category:"mode"}].map((ad) => <article key={ad.image}><img src={imageUrl(ad.image)} alt={ad.title} /><div><small>ESPACE PUBLICITAIRE · DÉMO</small><h3>{ad.title}</h3><button onClick={() => {setQuery(""); const c = config.categorySections.find(c => c[1].toLowerCase().includes(ad.category)); categoryChoice(c?.[0] || "");}}>Découvrir la sélection</button></div></article>)}
+              <a className="yv-advert-partner" href="/publicite.html">Votre marque sur YAVIYA · Découvrez nos espaces publicitaires</a>
+            </section>
             <section id="yv-catalog" className="yv-catalog">
               <div className="yv-heading">
                 <div>
@@ -662,7 +682,12 @@ export default function MarketApp({ data, pageName = "index", content = [] }) {
                     <option value="default">Notre sélection</option>
                     <option value="asc">Prix croissant</option>
                     <option value="desc">Prix décroissant</option>
-                    <option value="rating">Note du vendeur</option>
+                    <option value="verified">Vendeurs vérifiés en premier</option>
+                    <option value="newest">Derniers ajouts</option>
+                    <option value="oldest">Premiers ajouts</option>
+                    <option value="az">Nom : A à Z</option>
+                    <option value="za">Nom : Z à A</option>
+                    <option value="popular">Les plus achetés (démo)</option>
                   </select>
                 </label>
               </div>
@@ -879,8 +904,9 @@ export default function MarketApp({ data, pageName = "index", content = [] }) {
       </footer>
       {screen && (
         <Modal title={title} onClose={close}>
+          {screen.type === "photo-search" && <PhotoSearch products={products.filter(p => p.visible && p.approved)} country={country} onChoose={(product) => setScreen({type:"product", product})} />}
           {screen.type === "auth" && (
-            <AuthForm country={country} onSuccess={authenticated} />
+            <AuthForm country={country} initialAction={screen.action} onSuccess={authenticated} />
           )}
           {screen.type === "profile" && (
             <ProfileForm

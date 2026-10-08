@@ -84,6 +84,7 @@ try {
     beforeParse(w) {
       w.fetch = async (input, options = {}) => {
         const url = new URL(input, root);
+        if (url.pathname === "/api/auth/session" && !jar.getCookieStringSync(url.href)) return new Response(JSON.stringify({error:"Le service de compte est temporairement indisponible. Réessayez plus tard."}), {status:503, headers:{"Content-Type":"application/json"}});
         const headers = new Headers(options.headers);
         headers.set("Cookie", jar.getCookieStringSync(url.href));
         if (options.method && options.method !== "GET")
@@ -141,13 +142,18 @@ try {
     "hydration",
   );
   await new Promise((r) => setTimeout(r, 600));
+  assert.ok(document.querySelector('[aria-label="Rechercher avec une photo"]'), "recherche photo restaurée");
+  assert.equal(document.querySelectorAll(".yv-adverts article").length, 3, "publicités restaurées");
+  const sorting = document.querySelector(".yv-heading select");
+  assert.equal(sorting.options.length, 9, "options de tri");
   click("Acheter maintenant");
   await until(
     () => document.querySelector('[name="password"]'),
-    "achat ouvre connexion",
+    "achat ouvre inscription même lorsque session renvoie 503",
   );
   fill("login", "next-runtime-" + Date.now() + "@example.test");
   fill("password", "Native-next-password-2026!");
+  assert.ok(document.querySelector("dialog").textContent.includes("Créer mon compte acheteur"));
   click("Créer mon compte");
   await until(
     () => document.querySelector('[name="firstName"]'),
