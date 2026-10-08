@@ -328,6 +328,18 @@ try {
   );
   document.querySelector('dialog button[aria-label="Fermer"]').click();
   await until(() => !document.querySelector("dialog"), "fermeture paiements");
+  document.querySelector('.yv-chatbot-launcher').click();
+  await until(()=>document.querySelector('.yv-chat-question-grid'),'questions proposées du chatbot');
+  assert.equal(document.querySelectorAll('.yv-chat-question-grid button').length,8);
+  document.querySelector('.yv-chat-question-grid [data-question-id="returns"]').click();
+  await until(()=>document.querySelector('.yv-chat-conversation')?.textContent.includes('72 heures'),'réponse retour sous 72 heures');
+  assert.match(document.querySelector('.yv-chat-conversation').textContent,/72 heures suivant la réception/);
+  document.querySelector('.yv-chat-question-grid [data-question-id="tracking"]').click();
+  await until(()=>document.querySelector('.yv-chat-conversation')?.textContent.includes('Où retrouver et suivre ma commande'),'question de suivi envoyée');
+  document.querySelector('dialog button[aria-label="Fermer"]').click();
+  await until(()=>!document.querySelector('dialog'),'fermeture chatbot');
+  assert.ok([...document.querySelectorAll('.yv-footer button')].some(b=>b.textContent.includes('Retours et remboursements · 72 h')));
+  assert.ok(!document.body.textContent.includes('36 h'));
   const question = document.querySelector(".yv-popular-questions .yv-faq");
   question.open = true;
   question.querySelector(".yv-faq-feedback button:nth-of-type(2)").click();

@@ -2084,3 +2084,11 @@ hr {
 .yv-dialog-content { max-width:1200px; margin:0 auto; box-sizing:border-box; padding-bottom:calc(32px + env(safe-area-inset-bottom)); }
 .yv-dialog:has(.yv-dashboard) .yv-dialog-content { max-width:1500px; }
 @media(max-width:600px) { .yv-dialog-header { gap:10px; padding-right:12px; padding-left:12px; } .yv-dialog-header h2 { font-size:17px; } }
+
+.yv-chat > .yv-chat-suggestions { max-height:none; overflow:visible; margin:18px 0; }
+.yv-chat-suggestions > p { font-weight:600; color:#475569; }
+.yv-chat-question-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:9px; }
+.yv-chat-question-grid button { text-align:left; padding:11px 13px; min-height:44px; border:1px solid #fed7aa; border-radius:12px; background:#fff; color:#9a3412; font-size:13px; line-height:1.5; cursor:pointer; overflow-wrap:anywhere; }
+.yv-chat-question-grid button:hover { background:#fff7ed; border-color:#ea580c; }
+.yv-chat-question-grid button:focus-visible { outline:2px solid #ea580c; outline-offset:3px; }
+@media(max-width:600px) { .yv-chat-question-grid { grid-template-columns:minmax(0,1fr); } }

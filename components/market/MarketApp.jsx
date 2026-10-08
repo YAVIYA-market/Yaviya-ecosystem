@@ -4,7 +4,7 @@ import Head from "next/head";
 import ProductPrice from "./ProductPrice";
 import VerifiedSellerBadge from "./VerifiedSellerBadge";
 import Notifications from "./Notifications";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { api, amount, imageUrl } from "../../lib/market/api";
 import Modal from "./Modal";
 import AuthForm from "./AuthForm";
@@ -40,16 +40,20 @@ function Icon({ name }) {
   );
 }
 function Support({ faq, lang, user, country, onContact }) {
+  const conversation = useRef(null);
+  const suggestedIds = ["order", "tracking", "fees", "payment", "returns", "verified", "coins", "contact"];
+  const suggestions = suggestedIds.map(id => faq.find(q => q.id === id)).filter(Boolean);
   const [messages, setMessages] = useState([
     {
       answer:
         "Bonjour ! Je suis l’assistant YAVIYA. Posez votre question sur les achats, les vendeurs ou la livraison.",
     },
   ]);
-  function send(e) {
-    e.preventDefault();
-    const form = e.currentTarget;
-    const question = form.elements.question.value.trim();
+  useEffect(() => {
+    if (conversation.current) conversation.current.scrollTop = conversation.current.scrollHeight;
+  }, [messages]);
+  function ask(question, answer) {
+    if (!question.trim()) return;
     const words = question
       .toLowerCase()
       .split(/\W+/)
@@ -65,18 +69,23 @@ function Support({ faq, lang, user, country, onContact }) {
       ...v,
       {
         question,
-        answer: best?.score
+        answer: answer || (best?.score
           ? best.q[lang][1]
-          : "Je ne trouve pas de réponse précise. Consultez les questions ci-dessous ou contactez partenariat@yaviya.cd pour être orienté.",
+          : lang === "en" ? "Please check the suggested questions or contact customer service for help." : "Consultez les questions proposées ou contactez le service client pour être accompagné."),
       },
     ]);
+  }
+  function send(e) {
+    e.preventDefault();
+    const form = e.currentTarget;
+    ask(form.elements.question.value.trim());
     form.reset();
   }
   return (
     <section>
       <div className="yv-chat" aria-label="Chatbot YAVIYA">
         <h3>Besoin d’aide ? Discutez avec YAVIYA</h3>
-        <div aria-live="polite">
+        <div ref={conversation} className="yv-chat-conversation" aria-live="polite" aria-relevant="additions">
           {messages.map((m, i) => (
             <div key={i}>
               {m.question && (
@@ -89,6 +98,12 @@ function Support({ faq, lang, user, country, onContact }) {
               </p>
             </div>
           ))}
+        </div>
+        <div className="yv-chat-suggestions" aria-label={lang === "en" ? "Suggested questions" : "Questions suggérées"}>
+          <p>{lang === "en" ? "Choose a question to get an answer:" : "Choisissez une question pour obtenir une réponse :"}</p>
+          <div className="yv-chat-question-grid">
+            {suggestions.map(q => <button type="button" key={q.id} data-question-id={q.id} onClick={() => ask(q[lang][0], q[lang][1])}>{q[lang][0]}</button>)}
+          </div>
         </div>
         <form onSubmit={send} className="yv-form">
           <label>
@@ -1281,7 +1296,7 @@ export default function MarketApp({ data, pageName = "index", content = [] }) {
           <h3 id="yv-footer-shopping">{t("Vos achats", "Your purchases")}</h3>
           <button onClick={() => account("orders")}>{t("Suivre ma commande", "Track my order")}</button>
           <button onClick={() => setScreen({ type: "service", info: "payments" })}>{t("Paiements", "Payments")}</button>
-          <button onClick={() => setScreen({ type: "service", info: "returns" })}>{t("Retours et remboursements · 36 h", "Returns and refunds · 36 hours")}</button>
+          <button onClick={() => setScreen({ type: "service", info: "returns" })}>{t("Retours et remboursements · 72 h", "Returns and refunds · 72 hours")}</button>
           <button onClick={() => setScreen({ type: "service", info: "logistics" })}>{t("Livraison", "Delivery")}</button>
           <button onClick={() => setScreen({ type: "service", info: "benefits" })}>{t("Coupons et avantages", "Coupons and benefits")}</button>
         </section>
@@ -1595,7 +1610,7 @@ export default function MarketApp({ data, pageName = "index", content = [] }) {
                   ["support", "Service client"],
                   ["profile", "Adresse et coordonnées"],
                   ["coupons", "Coupons"],
-                  ["returns", "Retours et remboursements · 36 h"],
+                  ["returns", "Retours et remboursements · 72 h"],
                   ["following", "Magasins suivis"],
                   ["invitation", "Code d’invitation · Inviter un ami"],
                   ["subscriptions", "Abonnements de livraison & Prime"],

@@ -6,6 +6,7 @@ Ces changements concernent la branche de prévisualisation `migration/nextjs` (P
 
 - En-tête : Accueil, Favoris, Panier, Notifications, Profil. La cloche présente les mises à jour des commandes accessibles au compte connecté. Les marqueurs de lecture sont conservés dans ce navigateur, séparés par compte et marché.
 - Navigation : Pourquoi YAVIYA ouvre un contenu marketing détaillé sur les avantages publics, avec liens vers le catalogue, l’inscription vendeur et l’aide ; aucune information interne n’y figure.
+- Chatbot : huit questions suggérées sélectionnables (achat, suivi, frais, paiement, retours sous 72 h, vendeurs vérifiés, coupons, service client), affichant directement la réponse correspondante.
 - Chatbot : bouton flottant avec icône, compact sur mobile, qui ouvre l’assistant FAQ et le centre d’aide existants.
 - Pied de page : À propos remplace les forfaits vendeurs ; Revendre un produit ouvre la création du compte vendeur puis son dossier. Les frais de livraison détaillés restent dans la commande après choix de l’adresse.
 - Inscription vendeur : Compte et coordonnées → Activité → Identité et confidentialité → Choisir mon abonnement. RCCM obligatoire sauf déclaration de petite entreprise non enregistrée ; pièce d’identité obligatoire, conservée entre les étapes.
@@ -13,7 +14,7 @@ Ces changements concernent la branche de prévisualisation `migration/nextjs` (P
 - Fenêtres : plein écran sur ordinateur et mobile, flèche Retour en haut à gauche, fermeture clavier conservée et arrière-plan bloqué pendant l’ouverture.
 - Photos des produits : flèches précédente/suivante, navigation cyclique, compteur et raccourcis clavier, en complément des miniatures sur mobile et ordinateur.
 - Acheter maintenant : fond blanc, texte et contour orange.
-- Retours et remboursements dans le profil et le pied de page : demande à signaler sous 36 heures après réception ; lien vers les commandes et le service client. Ce délai concerne le signalement et ne promet pas un remboursement sous 36 heures. Aucun remboursement financier automatique n’est ajouté.
+- Retours et remboursements dans le profil et le pied de page : demande à signaler sous 72 heures après réception ; lien vers les commandes et le service client. Ce délai concerne le signalement et ne promet pas un remboursement sous 72 heures. Aucun remboursement financier automatique n’est ajouté.
 - Profil : Magasins suivis, code d’invitation et lien partageable. Une invitation ouvre l’inscription ; aucune récompense ni attribution comptable de parrainage n’est implémentée.
 - Boutiques : suivi depuis la fiche produit, persistance en base, consultation et désabonnement depuis le profil. Compteurs réels dans les espaces vendeur et admin, sans divulguer les identités des abonnés.
 
