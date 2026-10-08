@@ -4725,3 +4725,7 @@ header .header-actions {
     height: 112px;
   }
 }
+
+#home-ad-pause, #ad-pause { display:inline-grid; place-items:center; width:44px; min-height:44px; padding:10px; }
+#home-ad-pause svg, #ad-pause svg { display:block; width:20px; height:20px; fill:currentColor; }
+#count[hidden] { display:none !important; }

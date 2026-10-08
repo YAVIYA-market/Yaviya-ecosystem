@@ -77,7 +77,7 @@ const heroSlides = [
   },
 ];
 $(".hero").outerHTML =
-  `<section class="home-ad-carousel" aria-label="Publicités YAVIYA" tabindex="0"><div id="home-ad-slide"></div><div class="home-ad-controls"><label hidden>${T("Filtrer les publicités", "Filter advertisements")}<select id="home-ad-filter"><option value="all">${T("Toutes les publicités", "All advertisements")}</option><option value="catalog">${T("Catalogue", "Catalogue")}</option><option value="daily">${T("Promo du jour", "Daily deals")}</option></select></label><div class="home-ad-navigation"><button id="home-ad-prev" aria-label="${T("Précédente", "Previous")}">‹</button><span id="home-ad-count" hidden></span><button id="home-ad-next" aria-label="${T("Suivante", "Next")}">›</button><button id="home-ad-pause">Pause</button></div><a href="publicite.html">${T("Toutes les campagnes", "All campaigns")}</a></div></section>`;
+  `<section class="home-ad-carousel" aria-label="Publicités YAVIYA" tabindex="0"><div id="home-ad-slide"></div><div class="home-ad-controls"><label hidden>${T("Filtrer les publicités", "Filter advertisements")}<select id="home-ad-filter"><option value="all">${T("Toutes les publicités", "All advertisements")}</option><option value="catalog">${T("Catalogue", "Catalogue")}</option><option value="daily">${T("Promo du jour", "Daily deals")}</option></select></label><div class="home-ad-navigation"><button id="home-ad-prev" aria-label="${T("Précédente", "Previous")}">‹</button><span id="home-ad-count" hidden></span><button id="home-ad-next" aria-label="${T("Suivante", "Next")}">›</button><button id="home-ad-pause" aria-label="${T('Arrêter le défilement', 'Stop slideshow')}"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg></button></div><a href="publicite.html">${T("Toutes les campagnes", "All campaigns")}</a></div></section>`;
 let homeAdIndex = 0,
   homeAdFilter = "all",
   homeAdPaused =
@@ -98,9 +98,8 @@ function drawHomeAd() {
   $("#home-ad-slide").innerHTML =
     `<article class="home-ad"><div class="home-ad-copy"><span class="eyebrow">${T(...s.eyebrow)}</span><h1>${T(...s.title)}</h1><p>${T(...s.copy)}</p><a class="primary" href="${s.link}">${T(...s.cta)}</a><small>${s.tag} · ${T("Publicité illustrative", "Illustrative advertisement")}</small></div><img src="${s.img}" alt="${s.tag} · ${T("Sélection de produits", "Product selection")}"></article>`;
   $("#home-ad-count").textContent = `${homeAdIndex + 1} / ${slides.length}`;
-  $("#home-ad-pause").textContent = homeAdPaused
-    ? T("Reprendre", "Play")
-    : T("Pause", "Pause");
+  $("#home-ad-pause").innerHTML = homeAdPaused ? '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 4 12 8-12 8Z"/></svg>' : '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>';
+  $("#home-ad-pause").setAttribute("aria-label", homeAdPaused ? T("Reprendre le défilement", "Resume slideshow") : T("Arrêter le défilement", "Stop slideshow"));
 }
 function startHomeAd() {
   clearInterval(homeAdInterval);

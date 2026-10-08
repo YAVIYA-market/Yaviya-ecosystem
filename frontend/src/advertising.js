@@ -148,9 +148,8 @@ function drawAd() {
     .join("");
   ad$("#ad-position").textContent =
     `${currentAd + 1} / ${visibleCampaigns().length}`;
-  ad$("#ad-pause").textContent = paused
-    ? adT("Reprendre", "Play")
-    : adT("Pause", "Pause");
+  ad$("#ad-pause").innerHTML = paused ? '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 4 12 8-12 8Z"/></svg>' : '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>';
+  ad$("#ad-pause").setAttribute("aria-label", paused ? adT("Reprendre le défilement", "Resume slideshow") : adT("Arrêter le défilement", "Stop slideshow"));
 }
 function moveAd(delta) {
   currentAd =

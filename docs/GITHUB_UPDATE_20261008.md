@@ -4,6 +4,7 @@ Ces changements concernent la branche de prévisualisation `migration/nextjs` (P
 
 ## Interface et parcours
 
+- Sources originales conservées : le compteur HTML est vide et masqué au chargement pour les deux pays ; l’ajout le montre et le dernier retrait le masque. Les carrousels classiques utilisent aussi une icône sans texte Pause. Ces correctifs sont versionnés dans la branche de prévisualisation ; ils ne sont pas encore déployés sur le site public.
 - Panier : aucun nombre affiché lorsqu’il est vide ; compteur de quantité visible après ajout et masqué après retrait du dernier article.
 - Carrousel : commande de défilement par icône, sans mot Pause visible.
 - En-tête : Accueil, Favoris, Panier, Notifications, Profil. La cloche présente les mises à jour des commandes accessibles au compte connecté. Les marqueurs de lecture sont conservés dans ce navigateur, séparés par compte et marché.

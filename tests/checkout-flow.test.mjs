@@ -703,3 +703,26 @@ test("buyer country, currency and language survive reload without changing check
     f.close();
   }
 });
+
+test("original frontend hides an empty cart counter and keeps an icon-only slideshow control", async () => {
+  const f = await fixture();
+  try {
+    await until(() => f.run("marketReady && customerProfile!==null"));
+    const counter = f.w.document.querySelector("#count");
+    assert.equal(counter.hidden, true);
+    assert.equal(counter.textContent, "");
+    f.w.document.querySelector('[data-add="1"]').click();
+    assert.equal(counter.hidden, false);
+    assert.equal(counter.textContent, "1");
+    f.w.document.querySelector('[data-action="cart"]').click();
+    f.w.document.querySelector('[data-qty="1"][data-delta="-1"]').click();
+    assert.equal(counter.hidden, true);
+    assert.equal(counter.textContent, "");
+    const control = f.w.document.querySelector("#home-ad-pause");
+    assert.equal(control.textContent, "");
+    assert.ok(control.querySelector("svg"));
+    control.click();
+    assert.equal(control.getAttribute("aria-label"), "Reprendre le défilement");
+    assert.equal(control.textContent, "");
+  } finally { f.close(); }
+});
