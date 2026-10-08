@@ -4,6 +4,8 @@ import { api, amount, imageUrl } from "../../lib/market/api";
 import Modal from "./Modal";
 import AuthForm from "./AuthForm";
 import PhotoSearch from "./PhotoSearch";
+import PartnerPromotions from "./PartnerPromotions";
+import PopularQuestions from "./PopularQuestions";
 import ProfileForm from "./ProfileForm";
 import Onboarding from "./Onboarding";
 import Checkout from "./Checkout";
@@ -26,16 +28,12 @@ function Icon({ name }) {
   );
 }
 function Support({ faq, lang }) {
-  const [query, setQuery] = useState(""),
-    [messages, setMessages] = useState([
+  const [messages, setMessages] = useState([
       {
         answer:
           "Bonjour ! Je suis l’assistant YAVIYA. Posez votre question sur les achats, les vendeurs ou la livraison.",
       },
     ]);
-  const results = faq.filter((q) =>
-    q[lang].join(" ").toLowerCase().includes(query.toLowerCase()),
-  );
   function send(e) {
     e.preventDefault();
     const form = e.currentTarget;
@@ -91,21 +89,7 @@ function Support({ faq, lang }) {
           Assistant automatique basé sur les réponses du centre d’aide.
         </small>
       </div>
-      <h3>Questions populaires</h3>
-      <label>
-        Rechercher une réponse
-        <input
-          type="search"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-        />
-      </label>
-      {results.map((q) => (
-        <details key={q.id} className="yv-faq">
-          <summary>{q[lang][0]}</summary>
-          <p>{q[lang][1]}</p>
-        </details>
-      ))}
+      <PopularQuestions faq={faq} lang={lang} />
     </section>
   );
 }
@@ -233,6 +217,8 @@ export default function MarketApp({ data, pageName = "index", content = [] }) {
     [sort, setSort] = useState("default"),
     [seller, setSeller] = useState(""),
     [city, setCity] = useState(""),
+    [province, setProvince] = useState(""),
+    [commune, setCommune] = useState(""),
     [categoriesOpen, setCategoriesOpen] = useState(false),
     [cart, setCart] = useState([]),
     [wishes, setWishes] = useState([]),
@@ -435,6 +421,11 @@ export default function MarketApp({ data, pageName = "index", content = [] }) {
       setError(e.message);
     }
   }
+  const cityProvinces = country === "CG" ? {Brazzaville:"Brazzaville", "Pointe-Noire":"Pointe-Noire"} : {Kinshasa:"Kinshasa", Lubumbashi:"Haut-Katanga", Kolwezi:"Lualaba", Matadi:"Kongo Central", Boma:"Kongo Central"};
+  const shopProvince = shop => shop?.province || cityProvinces[shop?.city] || "";
+  const availableProvinces = [...new Set([...Object.values(cityProvinces), ...shops.map(shopProvince)].filter(Boolean))].sort((a,b)=>a.localeCompare(b,"fr"));
+  const availableCities = [...new Set([...Object.keys(cityProvinces), ...shops.map(s=>s.city).filter(Boolean)])].filter(v=>!province || cityProvinces[v]===province || shops.some(s=>s.city===v && shopProvince(s)===province)).sort((a,b)=>a.localeCompare(b,"fr"));
+  const availableCommunes = [...new Set([...(city ? Object.keys(config.deliveryRates[city] || {}) : []), ...shops.filter(s=>(!city || s.city===city) && (!province || shopProvince(s)===province)).map(s=>s.commune).filter(Boolean)])].sort((a,b)=>a.localeCompare(b,"fr"));
   const filtered = products
     .filter(
       (p) =>
@@ -450,7 +441,9 @@ export default function MarketApp({ data, pageName = "index", content = [] }) {
             .toLowerCase()
             .includes(query.toLowerCase())) &&
         (!seller || p.seller === Number(seller)) &&
-        (!city || shops.find((s) => s.id === p.seller)?.city === city),
+        (!city || shops.find((s) => s.id === p.seller)?.city === city) &&
+        (!province || shopProvince(shops.find(s=>s.id===p.seller)) === province) &&
+        (!commune || shops.find(s=>s.id===p.seller)?.commune === commune),
     )
     .sort((a, b) =>
       sort === "asc"
@@ -708,7 +701,7 @@ export default function MarketApp({ data, pageName = "index", content = [] }) {
                   </button>
                 ))}
               </div>
-              <div className="yv-fields">
+              <div className="yv-fields yv-locality-filters" aria-label="Filtres des boutiques">
                 <label>
                   Boutique
                   <select
@@ -716,27 +709,17 @@ export default function MarketApp({ data, pageName = "index", content = [] }) {
                     onChange={(e) => setSeller(e.target.value)}
                   >
                     <option value="">Toutes les boutiques</option>
-                    {shops.map((s) => (
+                    {shops.filter(s => (!province || shopProvince(s)===province) && (!city || s.city===city) && (!commune || s.commune===commune)).map((s) => (
                       <option key={s.id} value={s.id}>
                         {s.name}
                       </option>
                     ))}
                   </select>
                 </label>
-                <label>
-                  Ville
-                  <select
-                    value={city}
-                    onChange={(e) => setCity(e.target.value)}
-                  >
-                    <option value="">Toutes les villes</option>
-                    {[...new Set(shops.map((s) => s.city).filter(Boolean))].map(
-                      (v) => (
-                        <option key={v}>{v}</option>
-                      ),
-                    )}
-                  </select>
-                </label>
+                <label>{country === "CG" ? "Département" : "Province"}<select aria-label="Province" value={province} onChange={e=>{setProvince(e.target.value);setCity("");setCommune("");setSeller("");}}><option value="">Toutes les provinces</option>{availableProvinces.map(v=><option key={v}>{v}</option>)}</select></label>
+                <label>Ville<select aria-label="Ville" value={city} onChange={e=>{setCity(e.target.value);setCommune("");setSeller("");}}><option value="">Toutes les villes</option>{availableCities.map(v=><option key={v}>{v}</option>)}</select></label>
+                <label>Commune<select aria-label="Commune" value={commune} onChange={e=>{setCommune(e.target.value);setSeller("");}}><option value="">Toutes les communes</option>{availableCommunes.map(v=><option key={v}>{v}</option>)}</select></label>
+                <button className="yv-reset-filters" onClick={()=>{setSeller("");setProvince("");setCity("");setCommune("");}}>Réinitialiser les lieux</button>
               </div>
               <p className="yv-muted">
                 Catalogue de démonstration · produits et prix illustratifs.
@@ -833,6 +816,8 @@ export default function MarketApp({ data, pageName = "index", content = [] }) {
                 <p>Aucun produit trouvé. Essayez une autre recherche.</p>
               )}
             </section>
+            <PartnerPromotions onHelp={() => setScreen({type:"support"})} />
+            <PopularQuestions faq={faq} lang={lang} />
             <section className="yv-seller-banner">
               <h2>Votre boutique mérite une nouvelle vitrine.</h2>
               <p>

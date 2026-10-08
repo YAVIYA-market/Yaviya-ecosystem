@@ -146,6 +146,19 @@ try {
   assert.equal(document.querySelectorAll(".yv-adverts article").length, 3, "publicités restaurées");
   const sorting = document.querySelector(".yv-heading select");
   assert.equal(sorting.options.length, 9, "options de tri");
+  assert.ok(document.querySelector(".yv-partner-campaign").textContent.includes("M-PESA"), "grande campagne M-Pesa");
+  click("Partenaire logistique");
+  await until(() => document.querySelector(".yv-partner-campaign").textContent.includes("Le dernier kilomètre"), "campagne logistique");
+  assert.ok(document.querySelector(".yv-popular-questions .yv-faq summary"), "FAQ professionnelle sur accueil");
+  const provinceSelect=document.querySelector('[aria-label="Province"]');
+  provinceSelect.value="Haut-Katanga";
+  provinceSelect.dispatchEvent(new w.Event("change", {bubbles:true}));
+  await until(() => [...document.querySelector('[aria-label="Ville"]').options].some(o=>o.value==="Lubumbashi") && ![...document.querySelector('[aria-label="Ville"]').options].some(o=>o.value==="Kinshasa"), "province filtre villes");
+  const citySelect=document.querySelector('[aria-label="Ville"]');
+  citySelect.value="Lubumbashi"; citySelect.dispatchEvent(new w.Event("change", {bubbles:true}));
+  await until(()=>document.querySelector('[aria-label="Commune"]').options.length>1, "communes proposées");
+  click("Réinitialiser les lieux");
+  await until(()=>document.querySelectorAll(".yv-product").length===60,"réinitialisation des filtres");
   click("Acheter maintenant");
   await until(
     () => document.querySelector('[name="password"]'),
