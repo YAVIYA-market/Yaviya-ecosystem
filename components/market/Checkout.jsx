@@ -8,10 +8,9 @@ export default function Checkout({
   config,
   onSuccess,
 }) {
-  const [city, setCity] = useState(
-      country === "CG" ? "Brazzaville" : "Kinshasa",
-    ),
-    [commune, setCommune] = useState(country === "CG" ? "Makélékélé" : "Gombe"),
+  const [city, setCity] = useState(""),
+    [commune, setCommune] = useState(""),
+    [address, setAddress] = useState(profile.address || ""),
     [mode, setMode] = useState("home");
   const [busy, setBusy] = useState(false),
     [error, setError] = useState("");
@@ -51,8 +50,9 @@ export default function Checkout({
     q: i.q,
   }));
   const sellers = new Set(items.map((p) => p.seller)).size;
+  const addressReady = !!city && !!commune && (mode === "hand" || !!address.trim());
   const fee =
-    mode === "relay"
+    !addressReady ? null : mode === "relay"
       ? 3500 * sellers
       : ["home", "express"].includes(mode)
         ? ((country === "CG"
@@ -61,9 +61,11 @@ export default function Checkout({
             (mode === "express" ? 7500 : 0)) *
           sellers
         : 0;
-  const total = items.reduce((v, p) => v + p.price * p.q, 0) + fee;
+  const subtotal = items.reduce((v, p) => v + p.price * p.q, 0);
+  const total = subtotal + (fee || 0);
   async function submit(e) {
     e.preventDefault();
+    if (!e.currentTarget.reportValidity() || !addressReady) return;
     setBusy(true);
     setError("");
     if (!requestKey.current) requestKey.current = crypto.randomUUID();
@@ -127,12 +129,15 @@ export default function Checkout({
       <label>
         Ville *
         <select
+          name="city"
+          required
           value={city}
           onChange={(e) => {
             setCity(e.target.value);
-            setCommune(municipalities[e.target.value]?.[0] || "");
+            setCommune("");
           }}
         >
+          <option value="">Choisir ma ville</option>
           {cities.map((v) => (
             <option key={v} disabled={!municipalities[v]}>
               {v}
@@ -143,7 +148,8 @@ export default function Checkout({
       </label>
       <label>
         Commune *
-        <select value={commune} onChange={(e) => setCommune(e.target.value)}>
+        <select name="commune" required disabled={!city} value={commune} onChange={(e) => setCommune(e.target.value)}>
+          <option value="">Choisir ma commune</option>
           {(municipalities[city] || []).map((v) => (
             <option key={v}>{v}</option>
           ))}
@@ -163,7 +169,8 @@ export default function Checkout({
         <textarea
           name="address"
           required={mode !== "hand"}
-          defaultValue={profile.address}
+          value={address}
+          onChange={(e) => setAddress(e.target.value)}
           maxLength={150}
         />
       </label>
@@ -180,11 +187,11 @@ export default function Checkout({
       </fieldset>
       <div className="yv-total">
         <span>Produits</span>
-        <b>{amount(total - fee, country)}</b>
+        <b>{amount(subtotal, country)}</b>
         <span>Livraison</span>
-        <b>{amount(fee, country)}</b>
+        <b>{fee === null ? "Après choix de votre adresse" : amount(fee, country)}</b>
         <span>Total indicatif</span>
-        <b>{amount(total, country)}</b>
+        <b>{fee === null ? "À calculer" : amount(total, country)}</b>
       </div>
       <small>
         Le serveur recalcule et valide les prix et les frais lors de la
@@ -195,7 +202,7 @@ export default function Checkout({
           {error}
         </p>
       )}
-      <button className="yv-primary" disabled={busy}>
+      <button className="yv-primary" disabled={busy || !addressReady}>
         {busy ? "Enregistrement de votre commande…" : "Confirmer ma commande"}
       </button>
     </form>

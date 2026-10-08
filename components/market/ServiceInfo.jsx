@@ -1,3 +1,4 @@
+import WhyYaviya from "./WhyYaviya";
 import { useState } from "react";
 import { amount } from "../../lib/market/api";
 import { sellerPlans } from "../../lib/market/plans";
@@ -72,6 +73,10 @@ export default function ServiceInfo({
   onNavigate,
   onSeller,
 }) {
+  if (type === "why-yaviya") return <WhyYaviya onSeller={onSeller} onNavigate={onNavigate}/>;
+  if (type === "returns") return <section className="yv-service-info"><p className="yv-eyebrow">RETOURS ET REMBOURSEMENTS</p><h3>Un souci à la réception ? Nous sommes à votre écoute.</h3><p>Signalez votre demande de retour dans les 36 heures suivant la réception de votre commande. Conservez le produit, son emballage et les photos utiles à l’examen de votre demande.</p><div className="yv-info-grid"><article><h4>1. Retrouvez votre commande</h4><p>Consultez votre historique et notez la référence de la commande concernée.</p></article><article><h4>2. Contactez le service client</h4><p>Précisez le problème, la référence et les produits concernés. Le service client vous indique les étapes à suivre.</p></article><article><h4>3. Faites vérifier votre demande</h4><p>Le retour et le remboursement sont soumis à l’examen du dossier. Le délai de 36 heures concerne le signalement, pas le versement du remboursement.</p></article></div><div className="yv-actions"><button onClick={()=>onNavigate("orders")}>Mes commandes</button><button className="yv-primary" onClick={()=>onNavigate("contact")}>Demander un retour</button></div><small>En démonstration, aucun remboursement bancaire ou Mobile Money n’est exécuté automatiquement.</small></section>;
+  if (type === "about")
+    return <section className="yv-service-info"><p className="yv-eyebrow">YAVIYA</p><h3>Votre marché, à portée de main.</h3><p>YAVIYA rapproche les acheteurs, les boutiques et les livreurs pour faciliter les achats du quotidien en République démocratique du Congo et en République du Congo.</p><div className="yv-info-grid"><article><h4>Acheter simplement</h4><p>Découvrez les produits, comparez les offres et retrouvez le suivi de vos commandes dans votre espace.</p></article><article><h4>Faire grandir votre boutique</h4><p>Présentez vos produits, gérez vos commandes et préparez votre activité avec un dossier vendeur vérifié.</p></article><article><h4>Livrer et accompagner</h4><p>Les livreurs suivent leurs missions et échangent avec YAVIYA pour accompagner chaque livraison.</p></article></div><p className="yv-muted">La plateforme est en phase de démonstration. Les fonctionnalités commerciales et les intégrations de paiement sont activées progressivement.</p></section>;
   if (type === "seller-plans")
     return <SellerPlans country={country} onChoose={onSeller} />;
   if (type === "payments")
@@ -143,37 +148,7 @@ export default function ServiceInfo({
           Estimation indicative : 1 à 3 jours après validation du vendeur. Les
           frais sont calculés par colis vendeur et affichés avant confirmation.
         </p>
-        <h4>Tarifs du parcours actuel par commune</h4>
-        {country === "CD" ? (
-          Object.entries(config.deliveryRates).map(([city, rates]) => (
-            <details className="yv-faq" key={city}>
-              <summary>{city}</summary>
-              <div className="yv-table">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Commune</th>
-                      <th>Standard / colis</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {Object.entries(rates).map(([commune, fee]) => (
-                      <tr key={commune}>
-                        <td>{commune}</td>
-                        <td>{amount(fee, country)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </details>
-          ))
-        ) : (
-          <p>
-            Le tarif du marché Congo est présenté au paiement, en FCFA. Barème
-            de démonstration à confirmer localement.
-          </p>
-        )}
+        <p>Choisissez votre ville, votre commune et votre adresse lors de la commande pour consulter les frais de livraison correspondants avant de confirmer votre achat.</p>
         <button type="button" onClick={() => onNavigate("subscriptions")}>
           Voir les abonnements de livraison
         </button>

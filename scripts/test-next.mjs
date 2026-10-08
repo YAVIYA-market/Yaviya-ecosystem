@@ -185,12 +185,27 @@ try {
   assert.equal(document.querySelectorAll('.yv-daily-grid del').length, 2, 'anciens prix de promotion affichés');
   assert.match(document.querySelector('.yv-daily-grid del').textContent, /95/);
   assert.equal(document.querySelector('.yv-hero-dots').textContent.trim(), '', 'indicateurs du carrousel sans noms visibles');
-  assert.deepEqual([...document.querySelectorAll('.yv-header-actions > *')].map(e => e.textContent.trim().replace(/\s+\d+$/, '')), ['Accueil', 'Favoris', 'Panier', 'Profil']);
+  assert.deepEqual([...document.querySelectorAll('.yv-header-actions > *')].map(e => e.textContent.trim().replace(/\s+\d+$/, '')), ['Accueil', 'Favoris', 'Panier', 'Notifications', 'Profil']);
   assert.equal(
     document.querySelectorAll(".yv-workspace-nav button").length,
     4,
     "quatre vues séparées",
   );
+  document.querySelector('.yv-product-title').click();
+  await until(()=>document.querySelector('.yv-product-gallery'),'galerie de photos');
+  const firstPhoto = document.querySelector('.yv-detail-photo').src;
+  document.querySelector('[aria-label="Photo suivante"]').click();
+  await until(()=>document.querySelector('.yv-detail-photo').src!==firstPhoto,'photo suivante');
+  document.querySelector('[aria-label="Photo précédente"]').click();
+  await until(()=>document.querySelector('.yv-detail-photo').src===firstPhoto,'photo précédente');
+  document.querySelector('dialog button[aria-label="Fermer"]').click();
+  await until(()=>!document.querySelector('dialog'),'fermeture galerie');
+  click("Pourquoi YAVIYA");
+  await until(()=>document.querySelector('.yv-why-yaviya'),'avantages Pourquoi YAVIYA');
+  assert.equal(document.querySelectorAll('.yv-why-grid article').length,8);
+  assert.ok(document.querySelector('.yv-why-yaviya').textContent.length>4000,'texte marketing détaillé');
+  click("Découvrir les produits");
+  await until(()=>!document.querySelector('dialog'),'retour au catalogue');
   click("Vue Livreur");
   await until(
     () =>
@@ -269,8 +284,17 @@ try {
   );
   assert.equal(
     document.querySelector('[data-testid="checkout-form"] select').value,
-    "Kinshasa",
+    "",
   );
+  assert.match(document.querySelector('.yv-total').textContent, /Après choix de votre adresse/);
+  const deliveryCity = document.querySelector('[name="city"]');
+  deliveryCity.value = "Kinshasa";
+  deliveryCity.dispatchEvent(new w.Event("change", { bubbles: true }));
+  await until(() => document.querySelector('[name="commune"]').options.length > 1, "communes de livraison disponibles");
+  const deliveryCommune = document.querySelector('[name="commune"]');
+  deliveryCommune.value = "Gombe";
+  deliveryCommune.dispatchEvent(new w.Event("change", { bubbles: true }));
+  await until(() => !document.querySelector('.yv-total').textContent.includes('Après choix de votre adresse'), "frais affichés après choix de l’adresse");
   submit();
   await until(
     () => document.querySelector(".yv-success"),
@@ -287,6 +311,13 @@ try {
   await until(() => document.querySelector(".yv-chat"), "discussion partagée");
   document.querySelector('dialog button[aria-label="Fermer"]').click();
   await until(() => !document.querySelector("dialog"), "fermeture suivi");
+  click("Notifications");
+  await until(() => document.querySelector('.yv-notifications li'), "notification issue de la commande privée");
+  assert.match(document.querySelector('.yv-notifications li').textContent, /YV-/);
+  click("Tout marquer comme lu");
+  await until(() => !document.querySelector('.yv-notifications li.unread'), "notification marquée comme lue");
+  document.querySelector('dialog button[aria-label="Fermer"]').click();
+  await until(() => !document.querySelector("dialog"), "fermeture notifications");
   click("Paiements");
   await until(
     () =>
@@ -319,8 +350,8 @@ try {
     () =>
       document
         .querySelector(".yv-service-info")
-        ?.textContent.includes("Tarifs du parcours actuel"),
-    "tarifs livraison restaurés",
+        ?.textContent.includes("Choisissez votre ville"),
+    "livraison expliquée sans barème public",
   );
   document.querySelector('dialog button[aria-label="Fermer"]').click();
   await until(() => !document.querySelector("dialog"), "fermeture livraison");

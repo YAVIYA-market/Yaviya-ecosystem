@@ -76,6 +76,7 @@ for (const role of ["buyer", "seller", "courier", "admin", "pendingSeller"]) {
   if (role === "pendingSeller")
     await db.prepare("INSERT INTO identity_checks(user_id,kind,company_name,unregistered,seller_plan,document_type,object_key,file_name,status,issuing_country,document_mime,submitted_at) VALUES (?,'seller','Atelier Kivu · démo',1,'free','identity','fixture','piece-test.jpg','pending','CD','image/jpeg',?)").bind(user.id, Date.now()).run();
 }
+await db.prepare("INSERT INTO seller_follows(country,buyer_user_id,seller_id,followed_at) VALUES ('CD',?,10001,?)").bind(accounts.buyer.id,Date.now()).run();
 const opportunityOrder = {
   id: "YV-WORKSPACE-MISSION",
   createdAt: Date.now(),
@@ -234,6 +235,9 @@ try {
       document.querySelector(".yv-dashboard")?.textContent,
       /Vue d’ensemble/,
     );
+    if (["seller", "admin"].includes(role)) {
+      await until(()=>document.querySelector('.yv-follower-summary span')?.textContent==='1','nombre réel de personnes suivant les boutiques '+role);
+    }
     click("Commandes");
     await until(
       () =>

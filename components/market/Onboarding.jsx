@@ -23,14 +23,16 @@ export default function Onboarding({
       companyName: "",
       companyRcm: "",
       courierBenefitsAccepted: false,
+      identityConfirmed: false,
+      identityPrivacyConsent: false,
     });
   const [file, setFile] = useState(null),
     [busy, setBusy] = useState(false),
     [error, setError] = useState("");
   const seller = role === "seller";
   const steps = seller
-    ? ["Coordonnées", "Boutique", "Identité", "Abonnement"]
-    : ["Coordonnées", "Identité", "Benefits & règlement", "Abonnement"];
+    ? ["Compte et coordonnées", "Activité", "Identité et confidentialité", "Choisir mon abonnement"]
+    : ["Compte et coordonnées", "Identité et confidentialité", "Avantages et rémunération", "Abonnement et règlements"];
   const field = (name, value) => setValues((v) => ({ ...v, [name]: value }));
   async function submit(e) {
     e.preventDefault();
@@ -57,7 +59,9 @@ export default function Onboarding({
     }
   }
   return (
-    <section>
+    <section className="yv-onboarding">
+      <p className="yv-eyebrow">{seller ? "DEVENIR VENDEUR YAVIYA" : "DEVENIR LIVREUR YAVIYA"}</p>
+      <div className="yv-onboarding-heading"><h3>{steps[step]}</h3><span>Étape {step + 1} sur {steps.length}</span></div>
       <ol className="yv-steps">
         {steps.map((v, i) => (
           <li key={v} aria-current={i === step ? "step" : undefined}>
@@ -71,6 +75,7 @@ export default function Onboarding({
           profile={profile}
           country={country}
           config={config}
+          submitLabel="Continuer"
           onSaved={(p) => {
             setSaved(p);
             setStep(1);
@@ -85,8 +90,9 @@ export default function Onboarding({
                 Précisez son statut pour préparer la vérification.
               </p>
               <label>
-                Nom de la boutique *
+                Nom de l’entreprise *
                 <input
+                  name="companyName"
                   required
                   value={values.companyName}
                   onChange={(e) => field("companyName", e.target.value)}
@@ -96,15 +102,17 @@ export default function Onboarding({
               <label className="yv-check">
                 <input
                   type="checkbox"
+                  name="unregistered"
                   checked={values.unregistered}
                   onChange={(e) => field("unregistered", e.target.checked)}
                 />
-                Je n’ai pas de numéro RCCM
+                Petite entreprise non enregistrée · pas de numéro RCCM
               </label>
               {!values.unregistered && (
                 <label>
-                  Numéro RCCM *
+                  Numéro d’entreprise RCM / RCCM *
                   <input
+                    name="companyRcm"
                     required
                     value={values.companyRcm}
                     onChange={(e) => field("companyRcm", e.target.value)}
@@ -156,6 +164,7 @@ export default function Onboarding({
                 Photo de la pièce d’identité *
                 <input
                   type="file"
+                  name="document"
                   accept="image/jpeg,image/png"
                   required={!file}
                   onChange={(e) => setFile(e.target.files[0] || null)}
@@ -163,60 +172,39 @@ export default function Onboarding({
               </label>
               {file && <p>{file.name}</p>}
               <label className="yv-check">
-                <input required type="checkbox" />
+                <input required type="checkbox" checked={values.identityConfirmed} onChange={(e) => field("identityConfirmed", e.target.checked)} />
                 Je confirme que le document et les informations m’appartiennent.
               </label>
+              <label className="yv-check"><input required type="checkbox" checked={values.identityPrivacyConsent} onChange={(e) => field("identityPrivacyConsent", e.target.checked)} /><span>J’accepte le traitement de ma pièce pour la vérification du dossier conformément à la <a href="/confidentialite.html" target="_blank" rel="noreferrer">politique de confidentialité</a>.</span></label>
             </>
           )}
           {!seller && step === 2 && (
             <>
-              <h3>Benefits et paiement par livraison</h3>
+              <h3>Vos avantages et votre rémunération</h3>
+              <ul className="yv-onboarding-benefits"><li>Choisissez vos disponibilités et acceptez les missions proposées.</li><li>Consultez le montant de chaque mission avant de l’accepter.</li><li>Suivez vos frais, votre bénéfice net et vos règlements par livraison.</li><li>Discutez avec les participants de la commande et avec YAVIYA.</li><li>Retrouvez les évaluations des clients sur votre compte livreur.</li></ul>
               <p>
                 Recevez des missions, suivez vos revenus et discutez avec
                 YAVIYA. Le montant prévu et les frais de mission apparaissent
                 sur chaque livraison. Les règlements sont déclarés manuellement
                 ; aucun virement automatique.
               </p>
-              <label>
-                Méthode de règlement
-                <select
-                  value={values.courierPayoutMethod}
-                  onChange={(e) => field("courierPayoutMethod", e.target.value)}
-                >
-                  <option value="mobile_money">Mobile Money</option>
-                  <option value="bank">Banque</option>
-                  <option value="cash">Espèces</option>
-                </select>
-              </label>
-              {values.courierPayoutMethod !== "cash" && (
-                <label>
-                  Compte de règlement *
-                  <input
-                    required
-                    value={values.courierPayoutAccount}
-                    onChange={(e) =>
-                      field("courierPayoutAccount", e.target.value)
-                    }
-                    maxLength={150}
-                  />
-                </label>
-              )}
               <label className="yv-check">
                 <input
                   type="checkbox"
                   required
+                  name="courierBenefitsAccepted"
                   checked={values.courierBenefitsAccepted}
                   onChange={(e) =>
                     field("courierBenefitsAccepted", e.target.checked)
                   }
                 />
-                J’ai lu les conditions et confirmé mes tâches.
+                J’ai lu les modalités du pilote et du règlement par livraison, et confirmé mes tâches.
               </label>
             </>
           )}
           {step === 3 && (
             <>
-              <h3>Choisir votre abonnement</h3>
+              <h3>{seller ? "Choisir mon abonnement" : "Abonnement et règlements"}</h3>
               {seller && (
                 <SellerPlans
                   country={country}
@@ -225,8 +213,9 @@ export default function Onboarding({
               )}
               {seller ? (
                 <label>
-                  Forfait
+                  Abonnement vendeur *
                   <select
+                    name="sellerPlan"
                     value={values.sellerPlan}
                     onChange={(e) => field("sellerPlan", e.target.value)}
                   >
@@ -241,9 +230,7 @@ export default function Onboarding({
                   </select>
                 </label>
               ) : (
-                <p>
-                  Standard : accès aux missions après validation du dossier.
-                </p>
+                <><label>Abonnement livreur *<select name="courierPlan" required defaultValue="standard"><option value="standard">Standard · 0 FC / mois pendant le MVP</option></select></label><p>Accès aux missions, au suivi, aux évaluations et à la discussion avec YAVIYA après validation de votre identité.</p><h4>Recevoir mes règlements</h4><label>Mode de règlement préféré<select name="courierPayoutMethod" value={values.courierPayoutMethod} onChange={(e) => field("courierPayoutMethod", e.target.value)}><option value="mobile_money">Mobile Money</option><option value="bank">Virement bancaire</option><option value="cash">Espèces</option></select></label>{values.courierPayoutMethod !== "cash" && <label>Numéro Mobile Money ou référence de compte *<input name="courierPayoutAccount" required value={values.courierPayoutAccount} onChange={(e) => field("courierPayoutAccount", e.target.value)} maxLength={150} /></label>}<p>Le montant et le statut sont visibles pour chaque livraison. Un règlement manuel doit comporter une référence ; les transferts automatiques ne sont pas activés. Ne saisissez pas de PIN ou de mot de passe.</p></>
               )}
               <p>
                 Le choix est enregistré sans facturation. Les paiements

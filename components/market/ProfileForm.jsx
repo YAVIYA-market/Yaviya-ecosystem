@@ -6,6 +6,7 @@ export default function ProfileForm({
   config,
   role = "buyer",
   preferences = false,
+  submitLabel = "Enregistrer et continuer",
   onSaved,
 }) {
   const [busy, setBusy] = useState(false),
@@ -84,15 +85,17 @@ export default function ProfileForm({
       <label>
         {role === "seller"
           ? "Adresse complète de la boutique *"
-          : "Adresse complète *"}
+          : role === "courier" ? "Adresse de départ / base opérationnelle *" : "Adresse complète *"}
         <textarea
           name="address"
           required
           maxLength={250}
           defaultValue={profile?.address || ""}
           autoComplete="street-address"
+          placeholder="Ville, commune, quartier, avenue, numéro et repère"
         />
       </label>
+      {role !== "buyer" && !preferences && <label className="yv-check"><input type="checkbox" required /><span>{role === "seller" ? "Je confirme l’adresse de ma boutique et du point de retrait des commandes." : "Je confirme mon adresse de départ et ma base opérationnelle pour les livraisons."}</span></label>}
       {preferences && (
         <fieldset>
           <legend>Pays et préférences</legend>
@@ -151,7 +154,7 @@ export default function ProfileForm({
         </p>
       )}
       <button className="yv-primary" disabled={busy}>
-        {busy ? "Enregistrement…" : "Enregistrer et continuer"}
+        {busy ? "Enregistrement…" : submitLabel}
       </button>
     </form>
   );

@@ -328,6 +328,7 @@ export default function Dashboard({
   state,
   onRefresh,
   onManagePlan,
+  followerCounts,
 }) {
   const [tab, setTab] = useState("overview"),
     [report, setReport] = useState(null),
@@ -416,6 +417,7 @@ export default function Dashboard({
         <button onClick={onRefresh}>Actualiser</button>
       </div>
       <p className="yv-dashboard-description">{role === "seller" ? "Votre boutique, vos commandes et vos clients : tous vos outils au même endroit." : role === "courier" ? "Organisez vos missions, suivez vos livraisons et retrouvez vos règlements." : "Supervisez l’activité, vérifiez les comptes et accompagnez les vendeurs et livreurs."}</p>
+      {["seller","admin"].includes(role) && <div className="yv-follower-summary"><strong>{role === "seller" ? "Personnes qui suivent mes boutiques" : "Abonnements aux boutiques"}</strong><span>{followerCounts ? (role === "admin" ? Object.values(followerCounts).reduce((a,b)=>a+b,0) : (state.sellerIds || []).reduce((a,id)=>a+(followerCounts[id] || 0),0)) : "Chargement…"}</span></div>}
       <div className="yv-dashboard-layout">
         <nav className="yv-tabs" aria-label="Navigation de mon espace">
           {tabs.map(([id, label]) => (

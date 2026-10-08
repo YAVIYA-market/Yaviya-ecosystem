@@ -1,3 +1,4 @@
+import { handleSellerFollows } from "./seller-follows.js";
 import { handlePublicCatalogue } from "./public-catalogue.js";
 import marketConfig from "../data/market-config.json" with { type: "json" };
 import { handleProductInsights } from "./product-insights.js";
@@ -26,6 +27,7 @@ export default {
       headers.set("yaviya-user-id", "cg:" + headers.get("yaviya-user-id"));
       request = new Request(request, { headers });
     }
+    if (url.pathname === "/api/seller-follows") return handleSellerFollows(request, env);
     if (url.pathname === "/api/catalogue") return handlePublicCatalogue(request, env);
     if (url.pathname.startsWith("/api/product-insights"))
       return handleProductInsights(request, env);

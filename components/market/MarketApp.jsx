@@ -1,6 +1,9 @@
+import useSellerFollows from "../../lib/market/useSellerFollows";
+import Invitation from "./Invitation";
 import Head from "next/head";
 import ProductPrice from "./ProductPrice";
 import VerifiedSellerBadge from "./VerifiedSellerBadge";
+import Notifications from "./Notifications";
 import { useCallback, useEffect, useState } from "react";
 import { api, amount, imageUrl } from "../../lib/market/api";
 import Modal from "./Modal";
@@ -22,6 +25,7 @@ import AccountSettings from "./AccountSettings";
 import InfoContent from "./InfoContent";
 function Icon({ name }) {
   const paths = {
+    chatbot: "M8 3h8 M12 3v3 M5 7h14v12H5Z M2 10v6 M22 10v6 M8 12h.01 M16 12h.01 M9 16h6 M8 19v3 M16 19v3",
     cart: "M3 3h2l3 13h11l2-9H6 M9 20h.01 M18 20h.01",
     home: "M3 11 12 3l9 8 M5 10v11h5v-7h4v7h5V10",
     heart: "M12 21 3 12a5 5 0 0 1 9-6 5 5 0 0 1 9 6Z",
@@ -118,6 +122,10 @@ function ProductDetail({
   onAdd,
   onHelp,
   onChoose,
+  following,
+  followerCount,
+  onFollow,
+  followDisabled,
 }) {
   const images = [
     ...new Set(
@@ -129,6 +137,10 @@ function ProductDetail({
     ),
   ];
   const [photo, setPhoto] = useState(images[0]);
+  const photoIndex = Math.max(0, images.indexOf(photo));
+  function changePhoto(direction) {
+    setPhoto(images[(photoIndex + direction + images.length) % images.length]);
+  }
   const shop = shops.find((s) => s.id === product.seller);
   useEffect(() => {
     api("/api/product-insights/view", {
@@ -140,11 +152,14 @@ function ProductDetail({
     <>
       <div className="yv-detail">
         <section>
-          <img
-            className="yv-detail-photo"
-            src={imageUrl(photo)}
-            alt={product.title}
-          />
+          <div className="yv-product-gallery" role="group" aria-label={"Photos de " + product.title} tabIndex={images.length > 1 ? 0 : undefined} onKeyDown={e=>{if(images.length > 1 && ["ArrowLeft","ArrowRight"].includes(e.key)){e.preventDefault();changePhoto(e.key === "ArrowLeft" ? -1 : 1);}}}>
+            <img className="yv-detail-photo" src={imageUrl(photo)} alt={product.title + " · photo " + (photoIndex + 1)} />
+            {images.length > 1 && <>
+              <button type="button" className="yv-gallery-arrow yv-gallery-previous" aria-label="Photo précédente" title="Précédente" onClick={()=>changePhoto(-1)}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 5-7 7 7 7"/></svg></button>
+              <button type="button" className="yv-gallery-arrow yv-gallery-next" aria-label="Photo suivante" title="Suivante" onClick={()=>changePhoto(1)}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg></button>
+              <span className="yv-gallery-counter" aria-live="polite" aria-atomic="true">{photoIndex + 1} / {images.length}</span>
+            </>}
+          </div>
           <div className="yv-thumbnails">
             {images.map((src, i) => (
               <button
@@ -170,6 +185,7 @@ function ProductDetail({
               "Vérification en cours"
             )}
           </p>
+          <div className="yv-follow-control"><button type="button" aria-pressed={following} disabled={followDisabled} onClick={()=>onFollow(product.seller)}>{following ? "Boutique suivie ✓" : "Suivre cette boutique"}</button>{followerCount !== null && <small>{followerCount} personne(s) suivent cette boutique</small>}</div>
           <ProductPrice product={product} country={country} />
           <p>{product.desc}</p>
           <p className="yv-demo-rating">
@@ -266,6 +282,17 @@ export default function MarketApp({ data, pageName = "index", content = [] }) {
     [wishes, setWishes] = useState([]),
     [compare, setCompare] = useState([]);
   const buyerCounts = useBuyerCounts(products, country);
+  const following = useSellerFollows(user, country);
+  function becomeSeller() {
+    const next = { type: "onboarding", role: "seller" };
+    if (!user) {setIntent(next);setScreen({type:"auth",action:"signup"});}
+    else setScreen(next);
+  }
+  function followSeller(sellerId) {
+    if (!user) {setIntent(screen);setScreen({type:"auth",action:"signup"});}
+    else if (!profile) {setIntent(screen);setScreen({type:"profile",role:"buyer"});}
+    else following.toggle(sellerId);
+  }
   const close = useCallback(() => {
     setScreen(null);
     setPending(null);
@@ -481,7 +508,8 @@ export default function MarketApp({ data, pageName = "index", content = [] }) {
           : { type: "dashboard", role: intent.role, state: m },
       );
       setIntent(null);
-    } else setScreen({ type: "account" });
+    } else if (intent) {setScreen(intent);setIntent(null);}
+    else setScreen({ type: "account" });
   }
   async function logout() {
     try {
@@ -600,9 +628,14 @@ export default function MarketApp({ data, pageName = "index", content = [] }) {
         "partnership",
         "subscriptions",
         "seller-plans",
+        "why-yaviya",
+        "returns",
+        "about",
       ].includes(info)
     )
       setScreen({ type: "service", info });
+    else if (/^YVC-[0-9]{4,}[a-z]$/.test(params.get("invitation") || ""))
+      setScreen({type:"auth",action:"signup"});
     else if (["buyer", "seller", "courier", "admin"].includes(role))
       setScreen({ type: "workspace-intro", role });
   }, []);
@@ -655,11 +688,13 @@ export default function MarketApp({ data, pageName = "index", content = [] }) {
       checkout: "Finaliser mon achat",
       orders: "Historique des commandes",
       dashboard: "Mon espace professionnel",
+      following: "Mes magasins suivis",
+      invitation: "Inviter un ami",
       settings: "Paramètres du compte",
       support: "Centre d’aide",
       contact: "Contacter le support client",
       coupons: "Mes coupons",
-      service: "Découvrir les services YAVIYA",
+      service: screen?.info === "why-yaviya" ? "Pourquoi YAVIYA" : "Découvrir les services YAVIYA",
       compare: "Comparer les produits",
       success: "Commande enregistrée",
     }[screen?.type] ||
@@ -725,6 +760,7 @@ export default function MarketApp({ data, pageName = "index", content = [] }) {
               {t("Panier", "Cart")} <b>{cart.reduce((n, i) => n + i.q, 0)}</b>
             </span>
           </button>
+          <Notifications user={user} profile={profile} country={country} lang={lang} onSignIn={() => setScreen({ type: "auth" })} onOrders={(role) => account(role === "buyer" ? "orders" : "dashboard", role)} />
           <button onClick={() => account()}>
             <Icon name="user" />
             <span>{t("Profil", "Profile")}</span>
@@ -777,6 +813,7 @@ export default function MarketApp({ data, pageName = "index", content = [] }) {
         <button onClick={() => setScreen({ type: "support" })}>
           {t("Besoin d’aide", "Need help")}
         </button>
+        <button onClick={() => setScreen({type:"service",info:"why-yaviya"})}>{t("Pourquoi YAVIYA", "Why YAVIYA")}</button>
         <label className="yv-language">
           <span className="yv-sr-only">Langue</span>
           <select
@@ -1244,6 +1281,7 @@ export default function MarketApp({ data, pageName = "index", content = [] }) {
           <h3 id="yv-footer-shopping">{t("Vos achats", "Your purchases")}</h3>
           <button onClick={() => account("orders")}>{t("Suivre ma commande", "Track my order")}</button>
           <button onClick={() => setScreen({ type: "service", info: "payments" })}>{t("Paiements", "Payments")}</button>
+          <button onClick={() => setScreen({ type: "service", info: "returns" })}>{t("Retours et remboursements · 36 h", "Returns and refunds · 36 hours")}</button>
           <button onClick={() => setScreen({ type: "service", info: "logistics" })}>{t("Livraison", "Delivery")}</button>
           <button onClick={() => setScreen({ type: "service", info: "benefits" })}>{t("Coupons et avantages", "Coupons and benefits")}</button>
         </section>
@@ -1256,7 +1294,8 @@ export default function MarketApp({ data, pageName = "index", content = [] }) {
         </section>
         <section className="yv-footer-group yv-footer-partners" aria-labelledby="yv-footer-partners">
           <h3 id="yv-footer-partners">{t("Avec YAVIYA", "With YAVIYA")}</h3>
-          <button onClick={() => setScreen({ type: "service", info: "seller-plans" })}>{t("Forfaits vendeurs", "Seller plans")}</button>
+          <button onClick={() => setScreen({ type: "service", info: "about" })}>{t("À propos", "About us")}</button>
+          <button onClick={becomeSeller}>{t("Revendre un produit", "Resell a product")}</button>
           <a href="/publicite.html">{t("Devenir annonceur", "Advertise with us")}</a>
           <a className="yv-footer-partner-link" href="mailto:partenariat@yaviya.cd">{t("Devenir partenaire YAVIYA", "Partner with YAVIYA")}<span>partenariat@yaviya.cd</span></a>
         </section>
@@ -1265,6 +1304,7 @@ export default function MarketApp({ data, pageName = "index", content = [] }) {
           <a href={country === "CD" ? "/congo.html" : "/"}>{country === "CD" ? "République du Congo" : "République démocratique du Congo"}</a>
         </div>
       </footer>
+      <button type="button" className="yv-chatbot-launcher" aria-label="Ouvrir le chatbot YAVIYA" onClick={() => setScreen({type:"support"})}><Icon name="chatbot"/><span>{t("Besoin d’aide ?", "Need help?")}</span></button>
       {screen && (
         <Modal title={title} onClose={close}>
           {screen.type === "workspace-intro" && (
@@ -1356,11 +1396,12 @@ export default function MarketApp({ data, pageName = "index", content = [] }) {
               type={screen.info}
               country={country}
               config={config}
-              onNavigate={(section) =>
-                ["orders", "coupons"].includes(section)
-                  ? account(section)
-                  : setScreen({ type: "service", info: section })
-              }
+              onNavigate={(section) => {
+                if(section === "catalogue") {close();setTimeout(()=>document.getElementById("yv-catalog")?.scrollIntoView({behavior:"smooth"}),0);}
+                else if(section === "support") setScreen({type:"support"});
+                else if(["orders", "coupons", "contact"].includes(section)) account(section);
+                else setScreen({type:"service",info:section});
+              }}
               onSeller={() => {
                 const next = { type: "onboarding", role: "seller" };
                 if (!user) {
@@ -1410,11 +1451,15 @@ export default function MarketApp({ data, pageName = "index", content = [] }) {
               }}
             />
           )}
+          {screen.type === "product" && following.error && <p className="yv-error" role="alert">{following.error}</p>}
           {screen.type === "product" && (
             <ProductDetail
               key={chosen.id}
               buyerCounts={buyerCounts}
-              key={chosen.id}
+              following={following.follows.some(f=>f.sellerId===chosen.seller)}
+              followerCount={following.counts ? (following.counts[chosen.seller] || 0) : null}
+              followDisabled={following.busy || (!!user && !!profile && !following.ready)}
+              onFollow={followSeller}
               product={chosen}
               products={products}
               shops={shops}
@@ -1550,6 +1595,9 @@ export default function MarketApp({ data, pageName = "index", content = [] }) {
                   ["support", "Service client"],
                   ["profile", "Adresse et coordonnées"],
                   ["coupons", "Coupons"],
+                  ["returns", "Retours et remboursements · 36 h"],
+                  ["following", "Magasins suivis"],
+                  ["invitation", "Code d’invitation · Inviter un ami"],
                   ["subscriptions", "Abonnements de livraison & Prime"],
                   ["settings", "Paramètres du compte"],
                 ].map(([type, label]) => (
@@ -1558,7 +1606,7 @@ export default function MarketApp({ data, pageName = "index", content = [] }) {
                     onClick={() =>
                       type === "profile"
                         ? setScreen({ type, role: profile.accountType })
-                        : type === "subscriptions"
+                        : ["subscriptions", "returns"].includes(type)
                           ? setScreen({ type: "service", info: type })
                           : account(type)
                     }
@@ -1616,6 +1664,7 @@ export default function MarketApp({ data, pageName = "index", content = [] }) {
               role={screen.role}
               country={country}
               config={config}
+              followerCounts={following.counts}
               onManagePlan={() =>
                 setScreen({ type: "onboarding", role: "seller" })
               }
@@ -1629,6 +1678,8 @@ export default function MarketApp({ data, pageName = "index", content = [] }) {
               }
             />
           )}
+          {screen.type === "following" && <section><h3>Vos boutiques préférées, réunies ici.</h3><p>Suivez une boutique depuis une fiche produit pour la retrouver facilement.</p>{following.error && <p className="yv-error" role="alert">{following.error}</p>}{!following.ready && !following.error && <p>Chargement…</p>}{following.ready && following.follows.length===0 && <p>Vous ne suivez pas encore de boutique.</p>}<div className="yv-followed-stores">{following.follows.map(f=><article key={f.sellerId}><h4>{shops.find(shop=>shop.id===f.sellerId)?.name || "Boutique " + f.sellerId}</h4><small>{following.counts?.[f.sellerId] || 0} personne(s) suivent cette boutique</small><div className="yv-actions"><button onClick={()=>{setSeller(String(f.sellerId));close();setTimeout(()=>document.getElementById("yv-catalog")?.scrollIntoView({behavior:"smooth"}),0)}}>Voir les produits</button><button disabled={following.busy} onClick={()=>following.toggle(f.sellerId)}>Ne plus suivre</button></div></article>)}</div></section>}
+          {screen.type === "invitation" && profile && <Invitation code={profile.customerNumber} country={country}/>}
           {screen.type === "settings" && profile && (
             <AccountSettings
               profile={profile}
