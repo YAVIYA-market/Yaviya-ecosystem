@@ -408,7 +408,7 @@ hr {
   text-align: left;
 }
 .yv-shop-link .yv-verified-badge {
-  color: #2563eb;
+  color: #ea580c;
 }
 .yv-price {
   font-size: 21px;
@@ -1904,9 +1904,10 @@ hr {
   .yv-dashboard-title h2 { font-size: 24px; line-height: 1.2; }
 }
 
-/* Verification seal: clear shield-and-check certification mark. */
-.yv-verified-badge { color: #2563eb; gap: 6px; font-size: 12px; font-weight: 700; }
-.yv-verified-badge:has(> span) { padding: 5px 9px; border: 1px solid #c5d8fa; background: #eff6ff; border-radius: 8px; }
-.yv-verified-badge svg { width: 21px; height: 21px; }
-.yv-product .yv-verified-badge svg { width: 19px; height: 19px; }
+/* YAVIYA signature: orange Y monogram with a contrasting validation check. */
+.yv-verified-badge { color: #ea580c; gap: 7px; font-size: 12px; font-weight: 750; }
+.yv-verified-badge:has(> span) { padding: 5px 10px 5px 7px; border: 1px solid #fed7aa; background: #fff7ed; border-radius: 24px; }
+.yv-verified-badge > span { color: #9a3412; }
+.yv-verified-badge svg { width: 26px; height: 26px; }
+.yv-product .yv-verified-badge svg { width: 23px; height: 23px; }
 .yv-verified-badge small { color: #64748b; font-weight: 500; }

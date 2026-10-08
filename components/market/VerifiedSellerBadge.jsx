@@ -9,21 +9,13 @@ export default function VerifiedSellerBadge({
     : "Vendeur vérifié par YAVIYA";
   return (
     <span className="yv-verified-badge" title={label} aria-label={label}>
-      <svg viewBox="0 0 24 24" aria-hidden="true">
-        <path
-          fill="currentColor"
-          d="M12 2 21 6v6c0 5-4.1 8.4-9 10-4.9-1.6-9-5-9-10V6l9-4Z"
-        />
-        <path
-          d="m7.5 12 3 3 6-6"
-          fill="none"
-          stroke="white"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
+      <svg viewBox="0 0 32 32" aria-hidden="true">
+        <circle cx="14" cy="14" r="13" fill="currentColor" />
+        <path d="m8 7 6 7 6-7 M14 14v8" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+        <circle cx="25" cy="25" r="6" fill="#292524" stroke="white" strokeWidth="2" />
+        <path d="m22.5 25 1.6 1.6 3.5-3.5" fill="none" stroke="white" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
-      {!compact && <span>Vendeur vérifié{demo ? " · démo" : ""}</span>}
+      {!compact && <span>Vérifié par YAVIYA{demo ? " · démo" : ""}</span>}
       {compact && demo && <small>démo</small>}
     </span>
   );
