@@ -14,7 +14,13 @@ const mobile = resolve(dirname(fileURLToPath(import.meta.url)), ".."),
   root = "http://127.0.0.1:3033";
 const exportResult = spawnSync(
   process.execPath,
-  [join(mobile, "node_modules/expo/bin/cli"), "export", "--platform", "web"],
+  [
+    join(mobile, "node_modules/expo/bin/cli"),
+    "export",
+    "--platform",
+    "web",
+    "--clear",
+  ],
   {
     cwd: mobile,
     env: { ...process.env, EXPO_OFFLINE: "1", EXPO_PUBLIC_API_URL: root },

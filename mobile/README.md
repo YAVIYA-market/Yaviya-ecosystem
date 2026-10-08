@@ -87,3 +87,25 @@ npx eas-cli@latest build --platform all --profile production
 M-Pesa, Orange Money, Airtel, cartes, escrow, facturation des abonnements, remboursements et reversements automatiques restent désactivés tant que les contrats, clés et webhooks ne sont pas intégrés. Un règlement manuel peut être enregistré par l’admin après livraison : cet enregistrement n’effectue aucun transfert bancaire. Les coupons et certains compteurs d’acheteurs sont explicitement signalés comme démo. Les préférences de langue/devise sont enregistrées ; la traduction complète et la conversion des prix ne sont pas encore activées. Les notifications affichent les événements de commande actualisés ; les notifications push ne sont pas intégrées.
 
 Le chatbot est une aide guidée sur les questions fréquentes, avec relais vers `support@yaviya.cd`. Confirmer cette boîte mail avant lancement. Partenariats : `partenariat@yaviya.cd`.
+
+## Lancer la compilation signée depuis GitHub
+
+Le workflow `.github/workflows/mobile-apk.yml` prépare un **APK Android interne**, sans publication dans les stores. Il attend la configuration suivante dans GitHub → Settings → Secrets and variables → Actions :
+
+- Secret `EXPO_TOKEN` : jeton d’accès du compte Expo YAVIYA. Ne jamais le mettre dans un fichier ou le partager dans une discussion.
+- Variable `EAS_PROJECT_ID` : UUID du projet Expo initialisé pour cette application.
+- Variable facultative `EAS_OWNER` : nom du compte ou de l’organisation Expo propriétaire.
+- Variable `MOBILE_API_URL` : origine HTTPS du backend de cette branche, accessible à l’application sans protection Vercel nécessitant une connexion. Le workflow vérifie `/api/auth/mobile/session` avant compilation.
+
+Avant le premier lancement automatisé, le propriétaire doit initialiser le projet et ses identifiants de signature avec une première compilation interactive :
+
+```sh
+cd mobile
+npx eas-cli@latest login
+npx eas-cli@latest init
+npx eas-cli@latest build --platform android --profile preview
+```
+
+Reprendre l’UUID créé dans la variable GitHub `EAS_PROJECT_ID`. Le workflow utilise cet identifiant et transmet l’URL publique de l’API au compilateur distant. Il attend la fin de la compilation et conserve le résultat EAS contenant le lien de téléchargement. Si les paramètres manquent, il affiche les prérequis et ne lance aucune compilation.
+
+Le workflow est préparé sur la branche de travail ; il se déclenche lors d’une modification de la configuration mobile sur cette branche. Le lancement manuel dans l’interface GitHub est disponible lorsque le fichier de workflow existe sur la branche par défaut. Aucun jeton de contournement de protection Vercel ne doit être intégré à l’APK.
