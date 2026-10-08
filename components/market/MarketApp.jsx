@@ -6,6 +6,7 @@ import Modal from "./Modal";
 import AuthForm from "./AuthForm";
 import PhotoSearch from "./PhotoSearch";
 import PartnerPromotions from "./PartnerPromotions";
+import HeroCarousel from "./HeroCarousel";
 import PopularQuestions from "./PopularQuestions";
 import ServiceInfo from "./ServiceInfo";
 import Coupons from "./Coupons";
@@ -819,33 +820,7 @@ export default function MarketApp({ data, pageName = "index", content = [] }) {
       <main>
         {["index", "congo"].includes(pageName) ? (
           <>
-            <section className="yv-hero">
-              <div>
-                <p className="yv-eyebrow">
-                  {t("LE QUOTIDIEN, EN MIEUX", "EVERYDAY, MADE BETTER")}
-                </p>
-                <h1>
-                  {t("Vos envies.", "Your wishes.")}
-                  <br />
-                  {t("Votre ville.", "Your city.")}
-                  <br />
-                  <em>Votre YAVIYA.</em>
-                </h1>
-                <p>
-                  {t(
-                    "Du coup de cœur à l’essentiel, découvrez votre prochain achat au même endroit.",
-                    "From everyday essentials to special finds, discover your next purchase in one place.",
-                  )}
-                </p>
-                <a className="yv-primary" href="#yv-catalog">
-                  {t("Explorer le catalogue", "Explore the catalogue")}
-                </a>
-              </div>
-              <img src="/hero.png" alt="Sélection YAVIYA" />
-            </section>
-            <PartnerPromotions
-              onHelp={(info) => setScreen({ type: "service", info })}
-            />
+            <HeroCarousel country={country} t={t} onService={(info) => setScreen({ type: "service", info })} />
             <section
               className="yv-adverts"
               aria-label="Publicités et sélections"

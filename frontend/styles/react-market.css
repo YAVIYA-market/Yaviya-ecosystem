@@ -1810,3 +1810,25 @@ hr {
 .yv-product .yv-verified-badge {
   flex-shrink: 0;
 }
+/* Shared main carousel: catalogue and partner campaigns in one motion frame. */
+.yv-hero-carousel { margin: 32px 5vw 40px; }
+.yv-hero-carousel .yv-hero { margin: 0; min-height: 460px; }
+.yv-hero-frame { overflow: hidden; border-radius: 20px; aspect-ratio: 3 / 2; }
+.yv-hero-frame img { width: 100%; height: 100%; object-fit: cover; animation: yv-hero-pan 6.5s linear both; }
+.yv-hero-motion { animation: yv-hero-enter .4s ease-out; }
+.yv-hero-motion .yv-hero-demo { font-size: 12px; margin-top: 14px; }
+.yv-hero-controls, .yv-hero-dots { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.yv-hero-controls { margin-top: 12px; justify-content: space-between; }
+.yv-hero-controls button { border: 1px solid #e8d7c9; border-radius: 20px; padding: 9px 13px; background: white; color: #43352b; font-size: 14px; cursor: pointer; }
+.yv-hero-controls button[aria-pressed="true"] { background: var(--yv-orange); color: white; border-color: var(--yv-orange); }
+@keyframes yv-hero-pan { from { transform: scale(1); } to { transform: scale(1.08) translateX(-1%); } }
+@keyframes yv-hero-enter { from { opacity: .35; } to { opacity: 1; } }
+@media(max-width: 600px) {
+  .yv-hero-carousel { margin: 16px 16px 28px; }
+  .yv-hero-carousel .yv-hero { min-height: 0; grid-template-columns: 1fr; padding: 22px; gap: 18px; }
+  .yv-hero-carousel .yv-hero h1 { font-size: 32px; }
+  .yv-hero-carousel .yv-hero p:not(.yv-eyebrow):not(.yv-hero-demo) { font-size: 14px; }
+  .yv-hero-frame { aspect-ratio: 16 / 9; max-height: 200px; }
+  .yv-hero-controls button { font-size: 12px; padding: 8px 10px; }
+}
+@media(prefers-reduced-motion: reduce) { .yv-hero-motion, .yv-hero-frame img { animation: none; } }

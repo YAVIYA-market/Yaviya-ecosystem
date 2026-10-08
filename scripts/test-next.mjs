@@ -197,20 +197,12 @@ try {
   );
   document.querySelector("dialog button[aria-label]")?.click();
   await until(() => !document.querySelector("dialog"), "fermeture vue");
-  assert.ok(
-    document
-      .querySelector(".yv-partner-campaign")
-      .textContent.includes("M-PESA"),
-    "grande campagne M-Pesa",
-  );
-  click("Partenaire logistique");
-  await until(
-    () =>
-      document
-        .querySelector(".yv-partner-campaign")
-        .textContent.includes("Le dernier kilomètre"),
-    "campagne logistique",
-  );
+  document.querySelector('.yv-hero-dots button[aria-label="M-Pesa"]').click();
+  await until(() => document.querySelector('.yv-hero-carousel').textContent.includes('M-PESA'), 'M-Pesa dans le carrousel principal');
+  document.querySelector('.yv-hero-dots button[aria-label="Livraison"]').click();
+  await until(() => document.querySelector('.yv-hero-carousel').textContent.includes('Le dernier kilomètre'), 'livraison dans le même carrousel');
+  document.querySelector('.yv-hero-dots button[aria-label="YAVIYA"]').click();
+  await until(() => document.querySelector('.yv-hero-carousel').textContent.includes('Vos envies.'), 'retour au visuel YAVIYA');
   assert.ok(
     document.querySelector(".yv-popular-questions .yv-faq summary"),
     "FAQ professionnelle sur accueil",
@@ -316,7 +308,9 @@ try {
   );
   document.querySelector('dialog button[aria-label="Fermer"]').click();
   await until(() => !document.querySelector("dialog"), "fermeture support");
-  click("Livraison");
+  document.querySelector('.yv-hero-dots button[aria-label="Livraison"]').click();
+  await until(() => document.querySelector('.yv-hero-carousel').textContent.includes('Découvrir la livraison'), 'campagne livraison sélectionnée');
+  click("Découvrir la livraison");
   await until(
     () =>
       document
