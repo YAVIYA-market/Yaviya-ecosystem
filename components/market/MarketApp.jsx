@@ -404,7 +404,7 @@ export default function MarketApp({ data, pageName = "index", content = [] }) {
       setBusy(false);
     }
   }
-  async function authenticated(u) {
+  async function authenticated(u, registrationRole) {
     setUser(u);
     const p = await api("/api/customer", { country });
     setProfile(p);
@@ -414,6 +414,9 @@ export default function MarketApp({ data, pageName = "index", content = [] }) {
         return;
       }
       await purchase(pending);
+    } else if (["seller", "courier"].includes(registrationRole)) {
+      setScreen({ type: "onboarding", role: registrationRole });
+      setIntent(null);
     } else if (intent?.type === "workspace") {
       if (!p) {
         setScreen({ type: "profile", role: "buyer" });
@@ -639,7 +642,7 @@ export default function MarketApp({ data, pageName = "index", content = [] }) {
     {
       auth:
         screen?.action === "signup"
-          ? "Créer mon compte acheteur"
+          ? pending ? "Créer mon compte acheteur" : "Créer mon compte YAVIYA"
           : "Mon compte YAVIYA",
       "photo-search": "Recherche par photo",
       "workspace-intro": "Votre espace YAVIYA",
@@ -1378,6 +1381,7 @@ export default function MarketApp({ data, pageName = "index", content = [] }) {
             <AuthForm
               country={country}
               initialAction={screen.action}
+              initialRole={pending ? "buyer" : intent?.role}
               onSuccess={authenticated}
             />
           )}

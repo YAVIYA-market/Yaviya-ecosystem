@@ -1,7 +1,10 @@
 import { useEffect, useState } from "react";
 import { api } from "../../lib/market/api";
-export default function AuthForm({ country, onSuccess, initialAction = "login" }) {
+export default function AuthForm({ country, onSuccess, initialAction = "login", initialRole = "buyer" }) {
   const [action, setAction] = useState(initialAction);
+  const [registrationRole, setRegistrationRole] = useState(
+    ["seller", "courier"].includes(initialRole) ? initialRole : "buyer",
+  );
   const [mode, setMode] = useState("email"),
     [phoneCountry, setPhoneCountry] = useState(country);
   const [login, setLogin] = useState(""),
@@ -36,21 +39,21 @@ export default function AuthForm({ country, onSuccess, initialAction = "login" }
         return;
       }
       if (!value.user) throw Error("Connexion incomplète.");
-      await onSuccess(value.user);
+      await onSuccess(value.user, action === "signup" ? registrationRole : undefined);
     } catch (e) {
       setError(e.message);
     } finally {
       setBusy(false);
     }
   }
-  async function smsAction(action, form) {
+  async function smsAction(endpoint, form) {
     setBusy(true);
     setError("");
     try {
-      const value = await api("/api/auth/" + action, {
+      const value = await api("/api/auth/" + endpoint, {
         body: { phone: login, code: form.elements.smsCode?.value },
       });
-      if (action === "phone-send") {
+      if (endpoint === "phone-send") {
         setSms(true);
         return;
       }
@@ -58,7 +61,7 @@ export default function AuthForm({ country, onSuccess, initialAction = "login" }
         setFactor(true);
         return;
       }
-      await onSuccess(value.user);
+      await onSuccess(value.user, action === "signup" ? registrationRole : undefined);
     } catch (e) {
       setError(e.message);
     } finally {
@@ -83,6 +86,28 @@ export default function AuthForm({ country, onSuccess, initialAction = "login" }
         </label>
       ) : (
         <>
+          {action === "signup" && (
+            <>
+              <label>
+                Type de compte
+                <select
+                  aria-label="Type de compte"
+                  value={registrationRole}
+                  onChange={(e) => setRegistrationRole(e.target.value)}
+                >
+                  <option value="buyer">Acheteur</option>
+                  <option value="seller">Vendeur</option>
+                  <option value="courier">Livreur</option>
+                </select>
+              </label>
+              {registrationRole === "seller" && (
+                <p>Créez votre boutique en quatre étapes. Votre identité et votre adresse seront vérifiées par YAVIYA avant l’activation. Vous pouvez déclarer une activité sans numéro RCCM.</p>
+              )}
+              {registrationRole === "courier" && (
+                <p>Préparez votre dossier de livreur en quatre étapes : coordonnées, identité, avantages et rémunération, puis abonnement. L’administration vérifiera votre dossier avant l’attribution de livraisons.</p>
+              )}
+            </>
+          )}
           <label>
             Connexion par
             <select
@@ -136,7 +161,7 @@ export default function AuthForm({ country, onSuccess, initialAction = "login" }
               required
               minLength={8}
               maxLength={128}
-              autoComplete="current-password"
+              autoComplete={action === "signup" ? "new-password" : "current-password"}
             />
           </label>
           <small>
