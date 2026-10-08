@@ -146,6 +146,11 @@ try {
   assert.equal(document.querySelectorAll(".yv-adverts article").length, 3, "publicités restaurées");
   const sorting = document.querySelector(".yv-heading select");
   assert.equal(sorting.options.length, 9, "options de tri");
+  assert.equal(document.querySelectorAll(".yv-workspace-nav button").length,4,"quatre vues séparées");
+  click("Vue Livreur");
+  await until(()=>document.querySelector(".yv-workspace-intro")?.textContent.includes("vos missions"),"présentation livreur");
+  document.querySelector("dialog button[aria-label]")?.click();
+  await until(()=>!document.querySelector("dialog"),"fermeture vue");
   assert.ok(document.querySelector(".yv-partner-campaign").textContent.includes("M-PESA"), "grande campagne M-Pesa");
   click("Partenaire logistique");
   await until(() => document.querySelector(".yv-partner-campaign").textContent.includes("Le dernier kilomètre"), "campagne logistique");

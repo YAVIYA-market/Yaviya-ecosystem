@@ -370,11 +370,24 @@ export default function MarketApp({ data, pageName = "index", content = [] }) {
         return;
       }
       await purchase(pending);
+    } else if (intent?.type === "workspace") {
+      if (!p) {setScreen({type:"profile", role:"buyer"});return;}
+      const m=await refresh(intent.role);
+      setScreen(intent.role === "buyer" ? {type:"account"} : {type:"dashboard", role:intent.role, state:m});
+      setIntent(null);
     } else if (intent) {
       setScreen(intent);
       setIntent(null);
     } else if (!p) setScreen({ type: "profile", role: "buyer" });
     else setScreen({ type: "account" });
+  }
+  async function openWorkspace(role) {
+    if (!user || !profile) {
+      setIntent({type:"workspace",role});
+      setScreen(!user ? {type:"auth"} : {type:"profile",role:"buyer"});
+      return;
+    }
+    await account(role === "buyer" ? "account" : "dashboard", role);
   }
   async function account(section = "account", role) {
     setError("");
@@ -406,7 +419,11 @@ export default function MarketApp({ data, pageName = "index", content = [] }) {
     setProfile(p);
     setWishes(p.wishlist || []);
     if (pending) await purchase(pending);
-    else setScreen({ type: "account" });
+    else if (intent?.type === "workspace") {
+      const m=await refresh(intent.role);
+      setScreen(intent.role === "buyer" ? {type:"account"} : {type:"dashboard",role:intent.role,state:m});
+      setIntent(null);
+    } else setScreen({ type: "account" });
   }
   async function logout() {
     try {
@@ -472,6 +489,7 @@ export default function MarketApp({ data, pageName = "index", content = [] }) {
     {
       auth: screen?.action === "signup" ? "Créer mon compte acheteur" : "Mon compte YAVIYA",
       "photo-search": "Recherche par photo",
+      "workspace-intro": "Votre espace YAVIYA",
       profile: "Mes coordonnées",
       onboarding:
         screen?.role === "seller" ? "Devenir vendeur" : "Devenir livreur",
@@ -624,6 +642,7 @@ export default function MarketApp({ data, pageName = "index", content = [] }) {
           </button>
         </aside>
       )}
+      <nav className="yv-workspace-nav" aria-label="Vues YAVIYA"><span>Votre espace</span>{[["buyer","Acheteur"],["seller","Vendeur"],["courier","Livreur"],["admin","Admin"]].map(([role,label])=><button key={role} aria-pressed={screen?.role===role} onClick={()=>setScreen({type:"workspace-intro",role})}>Vue {label}</button>)}</nav>
       <main>
         {["index", "congo"].includes(pageName) ? (
           <>
@@ -889,6 +908,7 @@ export default function MarketApp({ data, pageName = "index", content = [] }) {
       </footer>
       {screen && (
         <Modal title={title} onClose={close}>
+          {screen.type === "workspace-intro" && <section className="yv-workspace-intro"><p className="yv-eyebrow">UN ESPACE ADAPTÉ À VOS BESOINS</p><h3>{({buyer:"Acheteur",seller:"Vendeur",courier:"Livreur",admin:"Administration"})[screen.role]}</h3><p>{({buyer:"Retrouvez vos commandes, vos favoris, vos coupons et le suivi de vos livraisons.",seller:"Gérez vos produits et leurs photos, vos commandes, vos échanges et les statistiques de votre boutique.",courier:"Consultez vos missions, confirmez vos prises en charge et livraisons, renseignez vos frais et échangez avec l’administration.",admin:"Supervisez les commandes, les vérifications d’identité, les boutiques, les livreurs et les statistiques centralisées."})[screen.role]}</p><button className="yv-primary" onClick={()=>openWorkspace(screen.role)}>Ouvrir mon espace</button>{["seller","courier"].includes(screen.role) && <><p>L’accès nécessite un compte vérifié et autorisé pour ce rôle.</p><button onClick={()=>{const intent={type:"onboarding",role:screen.role};if(!user){setIntent(intent);setScreen({type:"auth",action:"signup"});}else setScreen(intent);}}>Demander un compte {screen.role==="seller"?"vendeur":"livreur"}</button></>}{screen.role==="admin"&&<p>Accès réservé aux administrateurs autorisés, avec vérification de sécurité obligatoire.</p>}</section>}
           {screen.type === "photo-search" && <PhotoSearch products={products.filter(p => p.visible && p.approved)} country={country} onChoose={(product) => setScreen({type:"product", product})} />}
           {screen.type === "auth" && (
             <AuthForm country={country} initialAction={screen.action} onSuccess={authenticated} />
