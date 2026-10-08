@@ -1228,41 +1228,34 @@ export default function MarketApp({ data, pageName = "index", content = [] }) {
         )}
       </main>
       <footer className="yv-footer">
-        <div>
-          <a className="yv-logo" href="/">
-            YAVIYA<span>●</span>
-          </a>
-          <p>Votre marché, à portée de main.</p>
-          <small>Version de démonstration</small>
+        <div className="yv-footer-brand">
+          <a className="yv-logo" href={country === "CG" ? "/congo.html" : "/"}>YAVIYA<span>●</span></a>
+          <p>{t("Votre marché, à portée de main.", "Your marketplace, at your fingertips.")}</p>
+          <small>{country === "CD" ? "République démocratique du Congo" : "République du Congo"}</small>
         </div>
-        <div>
-          <a href="/aide.html">Centre d’aide</a>
-          <a href="/confidentialite.html">Confidentialité</a>
-          <a href="/publicite.html">Publicités</a>
-          <button
-            onClick={() => setScreen({ type: "service", info: "payments" })}
-          >
-            Paiements
-          </button>
-          <button
-            onClick={() => setScreen({ type: "service", info: "logistics" })}
-          >
-            Livraison
-          </button>
-          <button
-            onClick={() => setScreen({ type: "service", info: "seller-plans" })}
-          >
-            Forfaits vendeurs
-          </button>
-          <a href={country === "CD" ? "/congo.html" : "/"}>
-            {country === "CD"
-              ? "République du Congo"
-              : "République démocratique du Congo"}
-          </a>
-        </div>
-        <div>
-          <h3>Devenir partenaire YAVIYA</h3>
-          <a href="mailto:partenariat@yaviya.cd">partenariat@yaviya.cd</a>
+        <section className="yv-footer-group" aria-labelledby="yv-footer-shopping">
+          <h3 id="yv-footer-shopping">{t("Vos achats", "Your purchases")}</h3>
+          <button onClick={() => account("orders")}>{t("Suivre ma commande", "Track my order")}</button>
+          <button onClick={() => setScreen({ type: "service", info: "payments" })}>{t("Paiements", "Payments")}</button>
+          <button onClick={() => setScreen({ type: "service", info: "logistics" })}>{t("Livraison", "Delivery")}</button>
+          <button onClick={() => setScreen({ type: "service", info: "benefits" })}>{t("Coupons et avantages", "Coupons and benefits")}</button>
+        </section>
+        <section className="yv-footer-group" aria-labelledby="yv-footer-help">
+          <h3 id="yv-footer-help">{t("À votre écoute", "Here to help")}</h3>
+          <a href="/aide.html">{t("Centre d’aide", "Help centre")}</a>
+          <button onClick={() => setScreen({ type: "support" })}>{t("Besoin d’aide", "Need help")}</button>
+          <button onClick={() => setScreen({ type: "contact" })}>{t("Contacter le service client", "Contact customer service")}</button>
+          <a href="/confidentialite.html">{t("Confidentialité", "Privacy")}</a>
+        </section>
+        <section className="yv-footer-group yv-footer-partners" aria-labelledby="yv-footer-partners">
+          <h3 id="yv-footer-partners">{t("Avec YAVIYA", "With YAVIYA")}</h3>
+          <button onClick={() => setScreen({ type: "service", info: "seller-plans" })}>{t("Forfaits vendeurs", "Seller plans")}</button>
+          <a href="/publicite.html">{t("Devenir annonceur", "Advertise with us")}</a>
+          <a className="yv-footer-partner-link" href="mailto:partenariat@yaviya.cd">{t("Devenir partenaire YAVIYA", "Partner with YAVIYA")}<span>partenariat@yaviya.cd</span></a>
+        </section>
+        <div className="yv-footer-bottom">
+          <small>© 2026 YAVIYA · {t("Version de démonstration", "Demonstration version")}</small>
+          <a href={country === "CD" ? "/congo.html" : "/"}>{country === "CD" ? "République du Congo" : "République démocratique du Congo"}</a>
         </div>
       </footer>
       {screen && (

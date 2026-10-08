@@ -1841,3 +1841,25 @@ hr {
 
 /* Role previews belong only to the separate bar above the storefront. */
 .yv-workspace-nav { border-bottom: 3px solid #dce2e9; }
+/* Footer with distinct service groups and a compact regional strip. */
+.yv-footer { grid-template-columns: 1.15fr 1fr 1fr 1.2fr; gap: 36px; padding: 44px 5vw 22px; background: #19212d; color: #e2e8f0; border-top: 4px solid var(--yv-orange); }
+.yv-footer .yv-logo { color: white; }
+.yv-footer-brand p { margin: 8px 0; max-width: 230px; line-height: 1.6; font-size: 15px; color: #cbd5e1; }
+.yv-footer small { color: #b8c3d1; font-size: 12px; line-height: 1.6; }
+.yv-footer-group { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; min-width: 0; }
+.yv-footer-group h3 { color: white; font-size: 16px; margin-bottom: 10px; }
+.yv-footer-group a, .yv-footer-group button { color: #cbd5e1; font: inherit; font-size: 14px; line-height: 1.6; text-align: left; padding: 4px 0; background: none; border: 0; cursor: pointer; text-decoration: none; overflow-wrap: anywhere; }
+.yv-footer-group a:hover, .yv-footer-group button:hover, .yv-footer-bottom a:hover { color: #ffad6b; text-decoration: underline; }
+.yv-footer a:focus-visible, .yv-footer button:focus-visible { outline: 2px solid #ffad6b; outline-offset: 4px; border-radius: 3px; }
+.yv-footer-group .yv-footer-partner-link { display: grid; gap: 4px; padding: 12px 14px; margin-top: 6px; width: 100%; border: 1px solid #465262; border-radius: 12px; color: white; }
+.yv-footer-partner-link span { color: #ffad6b; font-size: 13px; }
+.yv-footer > .yv-footer-bottom { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding-top: 18px; margin-top: 4px; border-top: 1px solid #394453; }
+.yv-footer-bottom a { color: #cbd5e1; font-size: 13px; line-height: 1.6; }
+@media(max-width: 850px) { .yv-footer { grid-template-columns: 1fr 1fr; gap: 28px; } }
+@media(max-width: 600px) {
+  .yv-footer { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 24px 20px; padding: 30px 20px 20px; }
+  .yv-footer-brand, .yv-footer-partners { grid-column: 1 / -1; }
+  .yv-footer-brand p { max-width: none; }
+  .yv-footer-group { gap: 7px; }
+  .yv-footer > .yv-footer-bottom { flex-direction: column; align-items: flex-start; }
+}
