@@ -12,7 +12,7 @@ export default function VerifiedSellerBadge({
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <path
           fill="currentColor"
-          d="m12 1.5 2.7 1.7 3.2-.1 1.4 2.9 2.7 1.7-.4 3.2 1.1 3-2.1 2.4-.6 3.2-3.2.7-2.5 2-3-1.1-3.2.4L4.7 19l-2.9-1.4.1-3.2L.2 11.7l1.7-2.7-.1-3.2 2.9-1.4 1.7-2.7 3.2.4Z"
+          d="M12 2 21 6v6c0 5-4.1 8.4-9 10-4.9-1.6-9-5-9-10V6l9-4Z"
         />
         <path
           d="m7.5 12 3 3 6-6"

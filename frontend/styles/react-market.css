@@ -1903,3 +1903,10 @@ hr {
   .yv-dashboard-layout > .yv-tabs button { padding: 10px; font-size: 13px; }
   .yv-dashboard-title h2 { font-size: 24px; line-height: 1.2; }
 }
+
+/* Verification seal: clear shield-and-check certification mark. */
+.yv-verified-badge { color: #2563eb; gap: 6px; font-size: 12px; font-weight: 700; }
+.yv-verified-badge:has(> span) { padding: 5px 9px; border: 1px solid #c5d8fa; background: #eff6ff; border-radius: 8px; }
+.yv-verified-badge svg { width: 21px; height: 21px; }
+.yv-product .yv-verified-badge svg { width: 19px; height: 19px; }
+.yv-verified-badge small { color: #64748b; font-weight: 500; }
