@@ -1867,3 +1867,14 @@ hr {
   .yv-seller-banner .yv-actions { width: 100%; min-width: 0; }
   .yv-seller-banner-copy > p:not(.yv-eyebrow) { font-size: 14px; }
 }
+
+.yv-header-actions .yv-home-link { display: flex; flex-direction: column; align-items: center; gap: 7px; min-width: 70px; padding: 6px; color: inherit; text-decoration: none; font-size: 13px; }
+.yv-home-link:focus-visible { outline: 2px solid var(--yv-orange); outline-offset: 3px; border-radius: 8px; }
+@media(max-width: 700px) { .yv-header-actions .yv-home-link { min-width: 48px; padding: 3px 0; font-size: 11px; gap: 6px; } }
+@media(max-width: 400px) {
+  .yv-header { padding-left: 12px; padding-right: 12px; gap: 8px; }
+  .yv-header .yv-logo { font-size: 23px; }
+  .yv-header-actions { gap: 6px; }
+  .yv-header-actions button, .yv-header-actions .yv-home-link { min-width: 44px; }
+}
+@media(max-width: 350px) { .yv-header .yv-logo { font-size: 20px; } }

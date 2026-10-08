@@ -22,6 +22,7 @@ import InfoContent from "./InfoContent";
 function Icon({ name }) {
   const paths = {
     cart: "M3 3h2l3 13h11l2-9H6 M9 20h.01 M18 20h.01",
+    home: "M3 11 12 3l9 8 M5 10v11h5v-7h4v7h5V10",
     heart: "M12 21 3 12a5 5 0 0 1 9-6 5 5 0 0 1 9 6Z",
     user: "M4 22v-3a8 8 0 0 1 16 0v3 M16 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0",
     camera: "M3 7h4l2-3h6l2 3h4v13H3Z M16 13a4 4 0 1 1-8 0 4 4 0 0 1 8 0",
@@ -710,6 +711,10 @@ export default function MarketApp({ data, pageName = "index", content = [] }) {
             <Icon name="heart" />
             <span>{t("Favoris", "Favourites")}</span>
           </button>
+          <a className="yv-home-link" href={country === "CG" ? "/congo.html" : "/"}>
+            <Icon name="home" />
+            <span>{t("Accueil", "Home")}</span>
+          </a>
           <button onClick={() => setScreen({ type: "cart" })}>
             <Icon name="cart" />
             <span>
