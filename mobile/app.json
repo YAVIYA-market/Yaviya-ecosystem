@@ -1,0 +1,27 @@
+{
+  "expo": {
+    "name": "YAVIYA",
+    "slug": "yaviya-mobile",
+    "version": "0.1.0",
+    "scheme": "yaviya",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "cd.yaviya.mobile",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Ajouter une photo de produit, une pièce d’identité ou une preuve de livraison.",
+        "NSPhotoLibraryUsageDescription": "Sélectionner vos photos pour YAVIYA."
+      }
+    },
+    "android": {
+      "package": "cd.yaviya.mobile",
+      "permissions": [
+        "CAMERA"
+      ]
+    },
+    "plugins": [
+      "expo-router"
+    ]
+  }
+}
