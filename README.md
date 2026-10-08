@@ -1,5 +1,11 @@
 # YAVIYA — nouvelle version complète (1.9.0)
 
+## Migration Next.js
+
+La branche `migration/nextjs` utilise Next.js 16 pour les pages, les assets et l'API Node. `pages/` contient les routes, `components/MarketplacePage.jsx` le composant de compatibilité, `lib/legacy-pages.js` la préparation des pages et `backend/` les règles métier. Les interfaces HTML et les scripts existants sont conservés ; leur conversion en composants React indépendants reste une étape ultérieure. Les liens historiques `.html` fonctionnent toujours.
+
+Le build génère `public/` depuis les sources frontend, puis compile Next.js. `npm run dev:legacy` permet de comparer avec l'ancien serveur. Aucun secret ni fichier d'identité n'est copié dans les assets publics.
+
 Version 1.9.0 : adaptateur PostgreSQL activable sur Vercel, schéma d’exécution privé et rôle Supabase à privilèges minimaux. SQLite reste disponible uniquement pour le développement et les tests locaux.
 
 Version 1.7.0 : [12 catégories, coupons et préférences de profil](docs/PROFILE_CATEGORIES_COUPONS.md). La devise préférée ne convertit pas les prix.
@@ -33,7 +39,7 @@ npm start
 
 ## Activer l'installation Vercel
 
-Le projet GitHub doit être relié au projet Vercel `yaviyaecosystem`, avec la racine du dépôt comme Root Directory. `vercel.json` configure `npm run build`, le dossier `dist` et la fonction API indépendante. Utiliser Node.js 24.
+Le projet GitHub doit être relié au projet Vercel `yaviyaecosystem`, avec la racine du dépôt comme Root Directory. `vercel.json` configure `npm run build` et le framework Next.js. L'API utilise `pages/api/[[...route]].js`. Utiliser Node.js 24 et supprimer toute ancienne surcharge du dossier de sortie `dist` dans les paramètres Vercel.
 
 1. Utiliser le projet Supabase `yaviya-production` et sa connexion **Transaction pooler** sur le port 6543.
 2. Ajouter `POSTGRES_URL` comme Secret Vercel côté serveur. La valeur utilise le rôle limité `yaviya_runtime` et ne doit jamais être préfixée par `NEXT_PUBLIC_`.
