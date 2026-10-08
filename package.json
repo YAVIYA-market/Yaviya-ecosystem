@@ -11,7 +11,7 @@
     "test": "npm run check && node --test tests/*.test.mjs",
     "db:migrate": "node --env-file-if-exists=.env scripts/migrate.mjs",
     "db:owner": "node --env-file-if-exists=.env scripts/create-owner.mjs",
-    "test:next": "node scripts/test-next.mjs"
+    "test:next": "node scripts/test-next.mjs && node scripts/test-next-workspaces.mjs"
   },
   "type": "module",
   "engines": {

@@ -14,6 +14,9 @@ export default function Modal({ title, onClose, children }) {
       if (dialog.open) dialog.close();
     };
   }, [onClose]);
+  useEffect(() => {
+    if (ref.current) ref.current.scrollTop = 0;
+  }, [title]);
   return (
     <dialog ref={ref} className="yv-dialog" aria-labelledby="yv-modal-title">
       <div className="yv-dialog-header">

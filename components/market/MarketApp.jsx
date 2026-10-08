@@ -1,4 +1,5 @@
 import Head from "next/head";
+import VerifiedSellerBadge from "./VerifiedSellerBadge";
 import { useCallback, useEffect, useState } from "react";
 import { api, amount, imageUrl } from "../../lib/market/api";
 import Modal from "./Modal";
@@ -6,6 +7,10 @@ import AuthForm from "./AuthForm";
 import PhotoSearch from "./PhotoSearch";
 import PartnerPromotions from "./PartnerPromotions";
 import PopularQuestions from "./PopularQuestions";
+import ServiceInfo from "./ServiceInfo";
+import Coupons from "./Coupons";
+import useBuyerCounts from "../../lib/market/useBuyerCounts";
+import { demoRating } from "../../lib/market/plans";
 import ProfileForm from "./ProfileForm";
 import Onboarding from "./Onboarding";
 import Checkout from "./Checkout";
@@ -27,13 +32,13 @@ function Icon({ name }) {
     </svg>
   );
 }
-function Support({ faq, lang }) {
+function Support({ faq, lang, user, country, onContact }) {
   const [messages, setMessages] = useState([
-      {
-        answer:
-          "Bonjour ! Je suis l’assistant YAVIYA. Posez votre question sur les achats, les vendeurs ou la livraison.",
-      },
-    ]);
+    {
+      answer:
+        "Bonjour ! Je suis l’assistant YAVIYA. Posez votre question sur les achats, les vendeurs ou la livraison.",
+    },
+  ]);
   function send(e) {
     e.preventDefault();
     const form = e.currentTarget;
@@ -89,7 +94,13 @@ function Support({ faq, lang }) {
           Assistant automatique basé sur les réponses du centre d’aide.
         </small>
       </div>
-      <PopularQuestions faq={faq} lang={lang} />
+      <PopularQuestions
+        faq={faq}
+        lang={lang}
+        user={user}
+        country={country}
+        onContact={onContact}
+      />
     </section>
   );
 }
@@ -99,6 +110,7 @@ function ProductDetail({
   shops,
   config,
   country,
+  buyerCounts,
   onBuy,
   onAdd,
   onHelp,
@@ -149,17 +161,26 @@ function ProductDetail({
           <h3>{product.title}</h3>
           <p>
             {shop?.name || "Boutique " + product.seller} ·{" "}
-            {product.seller < 10000
-              ? "Vérifié · démo"
-              : shop?.reviewed
-                ? "Vendeur vérifié"
-                : "Vérification en cours"}
+            {shop?.reviewed ? (
+              <VerifiedSellerBadge verified demo={product.seller < 10000} />
+            ) : (
+              "Vérification en cours"
+            )}
           </p>
           <strong className="yv-price">{amount(product.price, country)}</strong>
           <p>{product.desc}</p>
+          <p className="yv-demo-rating">
+            ★ {demoRating(product).toFixed(1)} / 5 · note illustrative
+          </p>
           <p>{product.stock > 0 ? "Disponible" : "Indisponible"}</p>
-          {config.demoBuyerCounts[product.id] && (
+          {config.demoBuyerCounts[product.id]?.title === product.title ? (
             <p>{config.demoBuyerCounts[product.id].count} acheteurs · démo</p>
+          ) : (
+            <p>
+              {Number.isSafeInteger(buyerCounts[product.id])
+                ? buyerCounts[product.id] + " acheteur(s) · réception confirmée"
+                : "Achats : données indisponibles"}
+            </p>
           )}
           <div className="yv-actions">
             <button
@@ -176,28 +197,46 @@ function ProductDetail({
           </div>
         </section>
       </div>
-      <h3>À découvrir aussi</h3>
-      <div className="yv-related">
-        {products
-          .filter(
+      {[
+        {
+          title: "Produits similaires chez d’autres vendeurs",
+          items: products.filter(
             (p) =>
               p.id !== product.id &&
-              (p.category === product.category || p.seller === product.seller),
-          )
-          .slice(0, 6)
-          .map((p) => (
-            <button key={p.id} onClick={() => onChoose(p)}>
-              <img src={imageUrl(p.img)} alt="" />
-              {p.title}
-              <b>{amount(p.price, country)}</b>
-            </button>
-          ))}
-      </div>
+              p.seller !== product.seller &&
+              p.category === product.category,
+          ),
+        },
+        {
+          title: "Autres produits de cette boutique",
+          items: products.filter(
+            (p) => p.id !== product.id && p.seller === product.seller,
+          ),
+        },
+      ].map(
+        (group) =>
+          group.items.length > 0 && (
+            <section key={group.title}>
+              <h3>{group.title}</h3>
+              <div className="yv-related">
+                {group.items.slice(0, 6).map((p) => (
+                  <button key={p.id} onClick={() => onChoose(p)}>
+                    <img src={imageUrl(p.img)} alt={p.title} />
+                    {p.title}
+                    <b>{amount(p.price, country)}</b>
+                  </button>
+                ))}
+              </div>
+            </section>
+          ),
+      )}
     </>
   );
 }
 export default function MarketApp({ data, pageName = "index", content = [] }) {
   const { country, config, faq, initialProducts, initialShops } = data;
+  const [hydrated, setHydrated] = useState(false);
+  useEffect(() => setHydrated(true), []);
   const [products, setProducts] = useState(initialProducts),
     [shops, setShops] = useState(initialShops),
     [user, setUser] = useState(null),
@@ -223,9 +262,11 @@ export default function MarketApp({ data, pageName = "index", content = [] }) {
     [cart, setCart] = useState([]),
     [wishes, setWishes] = useState([]),
     [compare, setCompare] = useState([]);
+  const buyerCounts = useBuyerCounts(products, country);
   const close = useCallback(() => {
     setScreen(null);
     setPending(null);
+    setIntent(null);
   }, []);
   const t = (fr, en) => (lang === "en" ? en : fr);
   async function refresh(role = "buyer") {
@@ -371,9 +412,16 @@ export default function MarketApp({ data, pageName = "index", content = [] }) {
       }
       await purchase(pending);
     } else if (intent?.type === "workspace") {
-      if (!p) {setScreen({type:"profile", role:"buyer"});return;}
-      const m=await refresh(intent.role);
-      setScreen(intent.role === "buyer" ? {type:"account"} : {type:"dashboard", role:intent.role, state:m});
+      if (!p) {
+        setScreen({ type: "profile", role: "buyer" });
+        return;
+      }
+      const m = await refresh(intent.role);
+      setScreen(
+        intent.role === "buyer"
+          ? { type: "account" }
+          : { type: "dashboard", role: intent.role, state: m },
+      );
       setIntent(null);
     } else if (intent) {
       setScreen(intent);
@@ -383,8 +431,8 @@ export default function MarketApp({ data, pageName = "index", content = [] }) {
   }
   async function openWorkspace(role) {
     if (!user || !profile) {
-      setIntent({type:"workspace",role});
-      setScreen(!user ? {type:"auth"} : {type:"profile",role:"buyer"});
+      setIntent({ type: "workspace", role });
+      setScreen(!user ? { type: "auth" } : { type: "profile", role: "buyer" });
       return;
     }
     await account(role === "buyer" ? "account" : "dashboard", role);
@@ -420,8 +468,12 @@ export default function MarketApp({ data, pageName = "index", content = [] }) {
     setWishes(p.wishlist || []);
     if (pending) await purchase(pending);
     else if (intent?.type === "workspace") {
-      const m=await refresh(intent.role);
-      setScreen(intent.role === "buyer" ? {type:"account"} : {type:"dashboard",role:intent.role,state:m});
+      const m = await refresh(intent.role);
+      setScreen(
+        intent.role === "buyer"
+          ? { type: "account" }
+          : { type: "dashboard", role: intent.role, state: m },
+      );
       setIntent(null);
     } else setScreen({ type: "account" });
   }
@@ -438,11 +490,51 @@ export default function MarketApp({ data, pageName = "index", content = [] }) {
       setError(e.message);
     }
   }
-  const cityProvinces = country === "CG" ? {Brazzaville:"Brazzaville", "Pointe-Noire":"Pointe-Noire"} : {Kinshasa:"Kinshasa", Lubumbashi:"Haut-Katanga", Kolwezi:"Lualaba", Matadi:"Kongo Central", Boma:"Kongo Central"};
-  const shopProvince = shop => shop?.province || cityProvinces[shop?.city] || "";
-  const availableProvinces = [...new Set([...Object.values(cityProvinces), ...shops.map(shopProvince)].filter(Boolean))].sort((a,b)=>a.localeCompare(b,"fr"));
-  const availableCities = [...new Set([...Object.keys(cityProvinces), ...shops.map(s=>s.city).filter(Boolean)])].filter(v=>!province || cityProvinces[v]===province || shops.some(s=>s.city===v && shopProvince(s)===province)).sort((a,b)=>a.localeCompare(b,"fr"));
-  const availableCommunes = [...new Set([...(city ? Object.keys(config.deliveryRates[city] || {}) : []), ...shops.filter(s=>(!city || s.city===city) && (!province || shopProvince(s)===province)).map(s=>s.commune).filter(Boolean)])].sort((a,b)=>a.localeCompare(b,"fr"));
+  const cityProvinces =
+    country === "CG"
+      ? { Brazzaville: "Brazzaville", "Pointe-Noire": "Pointe-Noire" }
+      : {
+          Kinshasa: "Kinshasa",
+          Lubumbashi: "Haut-Katanga",
+          Kolwezi: "Lualaba",
+          Matadi: "Kongo Central",
+          Boma: "Kongo Central",
+        };
+  const shopProvince = (shop) =>
+    shop?.province || cityProvinces[shop?.city] || "";
+  const availableProvinces = [
+    ...new Set(
+      [...Object.values(cityProvinces), ...shops.map(shopProvince)].filter(
+        Boolean,
+      ),
+    ),
+  ].sort((a, b) => a.localeCompare(b, "fr"));
+  const availableCities = [
+    ...new Set([
+      ...Object.keys(cityProvinces),
+      ...shops.map((s) => s.city).filter(Boolean),
+    ]),
+  ]
+    .filter(
+      (v) =>
+        !province ||
+        cityProvinces[v] === province ||
+        shops.some((s) => s.city === v && shopProvince(s) === province),
+    )
+    .sort((a, b) => a.localeCompare(b, "fr"));
+  const availableCommunes = [
+    ...new Set([
+      ...(city ? Object.keys(config.deliveryRates[city] || {}) : []),
+      ...shops
+        .filter(
+          (s) =>
+            (!city || s.city === city) &&
+            (!province || shopProvince(s) === province),
+        )
+        .map((s) => s.commune)
+        .filter(Boolean),
+    ]),
+  ].sort((a, b) => a.localeCompare(b, "fr"));
   const filtered = products
     .filter(
       (p) =>
@@ -459,8 +551,9 @@ export default function MarketApp({ data, pageName = "index", content = [] }) {
             .includes(query.toLowerCase())) &&
         (!seller || p.seller === Number(seller)) &&
         (!city || shops.find((s) => s.id === p.seller)?.city === city) &&
-        (!province || shopProvince(shops.find(s=>s.id===p.seller)) === province) &&
-        (!commune || shops.find(s=>s.id===p.seller)?.commune === commune),
+        (!province ||
+          shopProvince(shops.find((s) => s.id === p.seller)) === province) &&
+        (!commune || shops.find((s) => s.id === p.seller)?.commune === commune),
     )
     .sort((a, b) =>
       sort === "asc"
@@ -468,15 +561,69 @@ export default function MarketApp({ data, pageName = "index", content = [] }) {
         : sort === "desc"
           ? b.price - a.price
           : sort === "verified"
-            ? Number(!!shops.find(s => s.id === b.seller)?.reviewed) - Number(!!shops.find(s => s.id === a.seller)?.reviewed)
-            : sort === "az" ? a.title.localeCompare(b.title, "fr")
-            : sort === "za" ? b.title.localeCompare(a.title, "fr")
-            : sort === "newest" ? Number(b.id) - Number(a.id)
-            : sort === "oldest" ? Number(a.id) - Number(b.id)
-            : sort === "popular" ? (config.demoBuyerCounts[b.id]?.count || 0) - (config.demoBuyerCounts[a.id]?.count || 0)
-            : 0,
+            ? Number(!!shops.find((s) => s.id === b.seller)?.reviewed) -
+              Number(!!shops.find((s) => s.id === a.seller)?.reviewed)
+            : sort === "az"
+              ? a.title.localeCompare(b.title, "fr")
+              : sort === "za"
+                ? b.title.localeCompare(a.title, "fr")
+                : sort === "newest"
+                  ? Number(b.id) - Number(a.id)
+                  : sort === "oldest"
+                    ? Number(a.id) - Number(b.id)
+                    : sort === "rating"
+                      ? demoRating(b) - demoRating(a)
+                      : sort === "popular"
+                        ? (config.demoBuyerCounts[b.id]?.count || 0) -
+                          (config.demoBuyerCounts[a.id]?.count || 0)
+                        : 0,
     );
   const chosen = screen?.product;
+  const dailyProducts = products.filter(
+    (p) => p.visible && p.approved && [3, 4].includes(p.originProduct || p.id),
+  );
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const info = params.get("info"),
+      role = params.get("role");
+    if (
+      [
+        "payments",
+        "logistics",
+        "benefits",
+        "partnership",
+        "subscriptions",
+        "seller-plans",
+      ].includes(info)
+    )
+      setScreen({ type: "service", info });
+    else if (["buyer", "seller", "courier", "admin"].includes(role))
+      setScreen({ type: "workspace-intro", role });
+  }, []);
+  useEffect(() => {
+    if (!user || screen?.type !== "orders") return;
+    let live = true,
+      working = false;
+    const timer = setInterval(async () => {
+      if (!live || working || document.visibilityState === "hidden") return;
+      working = true;
+      try {
+        const state = await api("/api/marketplace?view=buyer", { country });
+        if (live)
+          setScreen((current) =>
+            current?.type === "orders" ? { ...current, state } : current,
+          );
+      } catch (e) {
+        if (live) setError(e.message);
+      } finally {
+        working = false;
+      }
+    }, 10000);
+    return () => {
+      live = false;
+      clearInterval(timer);
+    };
+  }, [screen?.type, user?.id, country]);
   function categoryChoice(c, sub = "") {
     setCategory(c);
     setSubcategory(sub);
@@ -487,7 +634,10 @@ export default function MarketApp({ data, pageName = "index", content = [] }) {
   }
   let title =
     {
-      auth: screen?.action === "signup" ? "Créer mon compte acheteur" : "Mon compte YAVIYA",
+      auth:
+        screen?.action === "signup"
+          ? "Créer mon compte acheteur"
+          : "Mon compte YAVIYA",
       "photo-search": "Recherche par photo",
       "workspace-intro": "Votre espace YAVIYA",
       profile: "Mes coordonnées",
@@ -501,14 +651,16 @@ export default function MarketApp({ data, pageName = "index", content = [] }) {
       dashboard: "Mon espace professionnel",
       settings: "Paramètres du compte",
       support: "Centre d’aide",
+      contact: "Contacter le support client",
       coupons: "Mes coupons",
+      service: "Découvrir les services YAVIYA",
       compare: "Comparer les produits",
       success: "Commande enregistrée",
     }[screen?.type] ||
     chosen?.title ||
     "YAVIYA";
   return (
-    <div className="yv-app">
+    <div className="yv-app" data-ready={hydrated}>
       <Head>
         <title>
           {pageName === "index"
@@ -569,7 +721,12 @@ export default function MarketApp({ data, pageName = "index", content = [] }) {
               "What would you like today?",
             )}
           />
-          <button type="button" aria-label="Rechercher avec une photo" title="Rechercher avec une photo" onClick={() => setScreen({ type: "photo-search" })}>
+          <button
+            type="button"
+            aria-label="Rechercher avec une photo"
+            title="Rechercher avec une photo"
+            onClick={() => setScreen({ type: "photo-search" })}
+          >
             <Icon name="camera" />
           </button>
           <button aria-label="Rechercher">
@@ -642,7 +799,23 @@ export default function MarketApp({ data, pageName = "index", content = [] }) {
           </button>
         </aside>
       )}
-      <nav className="yv-workspace-nav" aria-label="Vues YAVIYA"><span>Votre espace</span>{[["buyer","Acheteur"],["seller","Vendeur"],["courier","Livreur"],["admin","Admin"]].map(([role,label])=><button key={role} aria-pressed={screen?.role===role} onClick={()=>setScreen({type:"workspace-intro",role})}>Vue {label}</button>)}</nav>
+      <nav className="yv-workspace-nav" aria-label="Vues YAVIYA">
+        <span>Votre espace</span>
+        {[
+          ["buyer", "Acheteur"],
+          ["seller", "Vendeur"],
+          ["courier", "Livreur"],
+          ["admin", "Admin"],
+        ].map(([role, label]) => (
+          <button
+            key={role}
+            aria-pressed={screen?.role === role}
+            onClick={() => setScreen({ type: "workspace-intro", role })}
+          >
+            Vue {label}
+          </button>
+        ))}
+      </nav>
       <main>
         {["index", "congo"].includes(pageName) ? (
           <>
@@ -670,9 +843,92 @@ export default function MarketApp({ data, pageName = "index", content = [] }) {
               </div>
               <img src="/hero.png" alt="Sélection YAVIYA" />
             </section>
-            <section className="yv-adverts" aria-label="Publicités et sélections">
-              {[{image:"headphones.png", title:"Votre musique. Votre rythme.", category:"électronique"}, {image:"sneakers.png", title:"Un pas de plus. Du style en plus.", category:"mode"}, {image:"handbag.png", title:"Emportez l’essentiel avec élégance.", category:"mode"}].map((ad) => <article key={ad.image}><img src={imageUrl(ad.image)} alt={ad.title} /><div><small>ESPACE PUBLICITAIRE · DÉMO</small><h3>{ad.title}</h3><button onClick={() => {setQuery(""); const c = config.categorySections.find(c => c[1].toLowerCase().includes(ad.category)); categoryChoice(c?.[0] || "");}}>Découvrir la sélection</button></div></article>)}
-              <a className="yv-advert-partner" href="/publicite.html">Votre marque sur YAVIYA · Découvrez nos espaces publicitaires</a>
+            <PartnerPromotions
+              onHelp={(info) => setScreen({ type: "service", info })}
+            />
+            <section
+              className="yv-adverts"
+              aria-label="Publicités et sélections"
+            >
+              {[
+                {
+                  image: "headphones.png",
+                  title: "Votre musique. Votre rythme.",
+                  category: "électronique",
+                },
+                {
+                  image: "sneakers.png",
+                  title: "Un pas de plus. Du style en plus.",
+                  category: "mode",
+                },
+                {
+                  image: "handbag.png",
+                  title: "Emportez l’essentiel avec élégance.",
+                  category: "mode",
+                },
+              ].map((ad) => (
+                <article key={ad.image}>
+                  <img src={imageUrl(ad.image)} alt={ad.title} />
+                  <div>
+                    <small>ESPACE PUBLICITAIRE · DÉMO</small>
+                    <h3>{ad.title}</h3>
+                    <button
+                      onClick={() => {
+                        setQuery("");
+                        const c = config.categorySections.find((c) =>
+                          c[1].toLowerCase().includes(ad.category),
+                        );
+                        categoryChoice(c?.[0] || "");
+                      }}
+                    >
+                      Découvrir la sélection
+                    </button>
+                  </div>
+                </article>
+              ))}
+              <a className="yv-advert-partner" href="/publicite.html">
+                Votre marque sur YAVIYA · Découvrez nos espaces publicitaires
+              </a>
+            </section>
+            <section className="yv-daily-promos" id="daily-promos">
+              <div className="yv-heading">
+                <div>
+                  <p className="yv-eyebrow">LA SÉLECTION DU JOUR</p>
+                  <h2>Promo du jour</h2>
+                </div>
+                <button
+                  onClick={() =>
+                    setScreen({ type: "service", info: "benefits" })
+                  }
+                >
+                  Découvrir mes avantages
+                </button>
+              </div>
+              <div className="yv-daily-grid">
+                {dailyProducts.map((p) => (
+                  <article key={p.id}>
+                    <img src={imageUrl(p.img)} alt={p.title} />
+                    <div>
+                      <span className="yv-campaign-label">
+                        SÉLECTION · DÉMO
+                      </span>
+                      <h3>{p.title}</h3>
+                      <strong className="yv-price">
+                        {amount(p.price, country)}
+                      </strong>
+                      <p>Découvrez l’offre et comparez les boutiques.</p>
+                      <button
+                        className="yv-primary"
+                        onClick={() =>
+                          setScreen({ type: "product", product: p })
+                        }
+                      >
+                        Voir le produit
+                      </button>
+                    </div>
+                  </article>
+                ))}
+              </div>
             </section>
             <section id="yv-catalog" className="yv-catalog">
               <div className="yv-heading">
@@ -694,11 +950,14 @@ export default function MarketApp({ data, pageName = "index", content = [] }) {
                     <option value="default">Notre sélection</option>
                     <option value="asc">Prix croissant</option>
                     <option value="desc">Prix décroissant</option>
-                    <option value="verified">Vendeurs vérifiés en premier</option>
+                    <option value="verified">
+                      Vendeurs vérifiés en premier
+                    </option>
                     <option value="newest">Derniers ajouts</option>
                     <option value="oldest">Premiers ajouts</option>
                     <option value="az">Nom : A à Z</option>
                     <option value="za">Nom : Z à A</option>
+                    <option value="rating">Note des clients (démo)</option>
                     <option value="popular">Les plus achetés (démo)</option>
                   </select>
                 </label>
@@ -720,7 +979,10 @@ export default function MarketApp({ data, pageName = "index", content = [] }) {
                   </button>
                 ))}
               </div>
-              <div className="yv-fields yv-locality-filters" aria-label="Filtres des boutiques">
+              <div
+                className="yv-fields yv-locality-filters"
+                aria-label="Filtres des boutiques"
+              >
                 <label>
                   Boutique
                   <select
@@ -728,17 +990,82 @@ export default function MarketApp({ data, pageName = "index", content = [] }) {
                     onChange={(e) => setSeller(e.target.value)}
                   >
                     <option value="">Toutes les boutiques</option>
-                    {shops.filter(s => (!province || shopProvince(s)===province) && (!city || s.city===city) && (!commune || s.commune===commune)).map((s) => (
-                      <option key={s.id} value={s.id}>
-                        {s.name}
-                      </option>
+                    {shops
+                      .filter(
+                        (s) =>
+                          (!province || shopProvince(s) === province) &&
+                          (!city || s.city === city) &&
+                          (!commune || s.commune === commune),
+                      )
+                      .map((s) => (
+                        <option key={s.id} value={s.id}>
+                          {s.name}
+                        </option>
+                      ))}
+                  </select>
+                </label>
+                <label>
+                  {country === "CG" ? "Département" : "Province"}
+                  <select
+                    aria-label="Province"
+                    value={province}
+                    onChange={(e) => {
+                      setProvince(e.target.value);
+                      setCity("");
+                      setCommune("");
+                      setSeller("");
+                    }}
+                  >
+                    <option value="">Toutes les provinces</option>
+                    {availableProvinces.map((v) => (
+                      <option key={v}>{v}</option>
                     ))}
                   </select>
                 </label>
-                <label>{country === "CG" ? "Département" : "Province"}<select aria-label="Province" value={province} onChange={e=>{setProvince(e.target.value);setCity("");setCommune("");setSeller("");}}><option value="">Toutes les provinces</option>{availableProvinces.map(v=><option key={v}>{v}</option>)}</select></label>
-                <label>Ville<select aria-label="Ville" value={city} onChange={e=>{setCity(e.target.value);setCommune("");setSeller("");}}><option value="">Toutes les villes</option>{availableCities.map(v=><option key={v}>{v}</option>)}</select></label>
-                <label>Commune<select aria-label="Commune" value={commune} onChange={e=>{setCommune(e.target.value);setSeller("");}}><option value="">Toutes les communes</option>{availableCommunes.map(v=><option key={v}>{v}</option>)}</select></label>
-                <button className="yv-reset-filters" onClick={()=>{setSeller("");setProvince("");setCity("");setCommune("");}}>Réinitialiser les lieux</button>
+                <label>
+                  Ville
+                  <select
+                    aria-label="Ville"
+                    value={city}
+                    onChange={(e) => {
+                      setCity(e.target.value);
+                      setCommune("");
+                      setSeller("");
+                    }}
+                  >
+                    <option value="">Toutes les villes</option>
+                    {availableCities.map((v) => (
+                      <option key={v}>{v}</option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  Commune
+                  <select
+                    aria-label="Commune"
+                    value={commune}
+                    onChange={(e) => {
+                      setCommune(e.target.value);
+                      setSeller("");
+                    }}
+                  >
+                    <option value="">Toutes les communes</option>
+                    {availableCommunes.map((v) => (
+                      <option key={v}>{v}</option>
+                    ))}
+                  </select>
+                </label>
+                <button
+                  className="yv-reset-filters"
+                  onClick={() => {
+                    setSeller("");
+                    setProvince("");
+                    setCity("");
+                    setCommune("");
+                  }}
+                >
+                  Réinitialiser les lieux
+                </button>
               </div>
               <p className="yv-muted">
                 Catalogue de démonstration · produits et prix illustratifs.
@@ -778,18 +1105,25 @@ export default function MarketApp({ data, pageName = "index", content = [] }) {
                       >
                         {shops.find((s) => s.id === p.seller)?.name ||
                           "Boutique " + p.seller}{" "}
-                        <span>
-                          {p.seller < 10000
-                            ? "✓ démo"
-                            : shops.find((s) => s.id === p.seller)?.reviewed
-                              ? "✓"
-                              : ""}
-                        </span>
+                        <VerifiedSellerBadge
+                          verified={
+                            !!shops.find((s) => s.id === p.seller)?.reviewed
+                          }
+                          demo={p.seller < 10000}
+                          compact
+                        />
                       </button>
                       <b className="yv-price">{amount(p.price, country)}</b>
-                      {config.demoBuyerCounts[p.id] && (
+                      {config.demoBuyerCounts[p.id]?.title === p.title ? (
                         <small>
                           {config.demoBuyerCounts[p.id].count} acheteurs · démo
+                        </small>
+                      ) : (
+                        <small>
+                          {Number.isSafeInteger(buyerCounts[p.id])
+                            ? buyerCounts[p.id] +
+                              " acheteur(s) · réception confirmée"
+                            : "Achats : données indisponibles"}
                         </small>
                       )}
                       <button
@@ -835,8 +1169,13 @@ export default function MarketApp({ data, pageName = "index", content = [] }) {
                 <p>Aucun produit trouvé. Essayez une autre recherche.</p>
               )}
             </section>
-            <PartnerPromotions onHelp={() => setScreen({type:"support"})} />
-            <PopularQuestions faq={faq} lang={lang} />
+            <PopularQuestions
+              faq={faq}
+              lang={lang}
+              user={user}
+              country={country}
+              onContact={() => setScreen({ type: "contact" })}
+            />
             <section className="yv-seller-banner">
               <h2>Votre boutique mérite une nouvelle vitrine.</h2>
               <p>
@@ -875,11 +1214,40 @@ export default function MarketApp({ data, pageName = "index", content = [] }) {
         ) : pageName === "aide" ? (
           <section className="yv-info">
             <h1>Comment pouvons-nous vous aider ?</h1>
-            <Support faq={faq} lang={lang} />
+            <Support
+              faq={faq}
+              lang={lang}
+              user={user}
+              country={country}
+              onContact={() => setScreen({ type: "contact" })}
+            />
           </section>
         ) : (
           <section className="yv-info">
-            <InfoContent content={content} />
+            {pageName === "publicite" ? (
+              <>
+                <div className="yv-promotion-heading">
+                  <div>
+                    <p className="yv-eyebrow">LES ENVIES DU MOMENT</p>
+                    <h1>À l’affiche sur YAVIYA</h1>
+                    <p>
+                      Campagnes illustratives, sans partenariat commercial
+                      confirmé.
+                    </p>
+                  </div>
+                </div>
+                <PartnerPromotions
+                  onHelp={(info) => setScreen({ type: "service", info })}
+                />
+                <ServiceInfo
+                  type="partnership"
+                  country={country}
+                  config={config}
+                />
+              </>
+            ) : (
+              <InfoContent content={content} />
+            )}
           </section>
         )}
       </main>
@@ -895,6 +1263,21 @@ export default function MarketApp({ data, pageName = "index", content = [] }) {
           <a href="/aide.html">Centre d’aide</a>
           <a href="/confidentialite.html">Confidentialité</a>
           <a href="/publicite.html">Publicités</a>
+          <button
+            onClick={() => setScreen({ type: "service", info: "payments" })}
+          >
+            Paiements
+          </button>
+          <button
+            onClick={() => setScreen({ type: "service", info: "logistics" })}
+          >
+            Livraison
+          </button>
+          <button
+            onClick={() => setScreen({ type: "service", info: "seller-plans" })}
+          >
+            Forfaits vendeurs
+          </button>
           <a href={country === "CD" ? "/congo.html" : "/"}>
             {country === "CD"
               ? "République du Congo"
@@ -908,10 +1291,122 @@ export default function MarketApp({ data, pageName = "index", content = [] }) {
       </footer>
       {screen && (
         <Modal title={title} onClose={close}>
-          {screen.type === "workspace-intro" && <section className="yv-workspace-intro"><p className="yv-eyebrow">UN ESPACE ADAPTÉ À VOS BESOINS</p><h3>{({buyer:"Acheteur",seller:"Vendeur",courier:"Livreur",admin:"Administration"})[screen.role]}</h3><p>{({buyer:"Retrouvez vos commandes, vos favoris, vos coupons et le suivi de vos livraisons.",seller:"Gérez vos produits et leurs photos, vos commandes, vos échanges et les statistiques de votre boutique.",courier:"Consultez vos missions, confirmez vos prises en charge et livraisons, renseignez vos frais et échangez avec l’administration.",admin:"Supervisez les commandes, les vérifications d’identité, les boutiques, les livreurs et les statistiques centralisées."})[screen.role]}</p><button className="yv-primary" onClick={()=>openWorkspace(screen.role)}>Ouvrir mon espace</button>{["seller","courier"].includes(screen.role) && <><p>L’accès nécessite un compte vérifié et autorisé pour ce rôle.</p><button onClick={()=>{const intent={type:"onboarding",role:screen.role};if(!user){setIntent(intent);setScreen({type:"auth",action:"signup"});}else setScreen(intent);}}>Demander un compte {screen.role==="seller"?"vendeur":"livreur"}</button></>}{screen.role==="admin"&&<p>Accès réservé aux administrateurs autorisés, avec vérification de sécurité obligatoire.</p>}</section>}
-          {screen.type === "photo-search" && <PhotoSearch products={products.filter(p => p.visible && p.approved)} country={country} onChoose={(product) => setScreen({type:"product", product})} />}
+          {screen.type === "workspace-intro" && (
+            <section className="yv-workspace-intro">
+              <p className="yv-eyebrow">UN ESPACE ADAPTÉ À VOS BESOINS</p>
+              <h3>
+                {
+                  {
+                    buyer: "Acheteur",
+                    seller: "Vendeur",
+                    courier: "Livreur",
+                    admin: "Administration",
+                  }[screen.role]
+                }
+              </h3>
+              <p>
+                {
+                  {
+                    buyer:
+                      "Retrouvez vos commandes, vos favoris, vos coupons et le suivi de vos livraisons.",
+                    seller:
+                      "Gérez vos produits et leurs photos, vos commandes, vos échanges et les statistiques de votre boutique.",
+                    courier:
+                      "Consultez vos missions, confirmez vos prises en charge et livraisons, renseignez vos frais et échangez avec l’administration.",
+                    admin:
+                      "Supervisez les commandes, les vérifications d’identité, les boutiques, les livreurs et les statistiques centralisées.",
+                  }[screen.role]
+                }
+              </p>
+              <button
+                className="yv-primary"
+                onClick={() => openWorkspace(screen.role)}
+              >
+                Ouvrir mon espace
+              </button>
+              {["seller", "courier"].includes(screen.role) && (
+                <>
+                  <p>
+                    L’accès nécessite un compte vérifié et autorisé pour ce
+                    rôle.
+                  </p>
+                  <button
+                    onClick={() => {
+                      const intent = { type: "onboarding", role: screen.role };
+                      if (!user) {
+                        setIntent(intent);
+                        setScreen({ type: "auth", action: "signup" });
+                      } else setScreen(intent);
+                    }}
+                  >
+                    Demander un compte{" "}
+                    {screen.role === "seller" ? "vendeur" : "livreur"}
+                  </button>
+                </>
+              )}
+              {screen.role === "admin" && (
+                <p>
+                  Accès réservé aux administrateurs autorisés, avec vérification
+                  de sécurité obligatoire.
+                </p>
+              )}
+            </section>
+          )}
+          {screen.type === "contact" && (
+            <section className="yv-support-contact">
+              <h3>Parlons de votre demande</h3>
+              <p>
+                Pour faciliter le traitement, indiquez le numéro de commande, le
+                produit concerné et ce qui vous bloque. Ne transmettez jamais
+                votre mot de passe ni votre code de connexion.
+              </p>
+              <a
+                className="yv-primary"
+                href="mailto:partenariat@yaviya.cd?subject=Demande%20service%20client%20YAVIYA"
+              >
+                Écrire au service client
+              </a>
+              <p>
+                Contact provisoire pour orienter les demandes :
+                partenariat@yaviya.cd.
+              </p>
+              <button onClick={() => setScreen({ type: "support" })}>
+                Consulter le chatbot et les réponses
+              </button>
+            </section>
+          )}
+          {screen.type === "service" && (
+            <ServiceInfo
+              type={screen.info}
+              country={country}
+              config={config}
+              onNavigate={(section) =>
+                ["orders", "coupons"].includes(section)
+                  ? account(section)
+                  : setScreen({ type: "service", info: section })
+              }
+              onSeller={() => {
+                const next = { type: "onboarding", role: "seller" };
+                if (!user) {
+                  setIntent(next);
+                  setScreen({ type: "auth", action: "signup" });
+                } else setScreen(next);
+              }}
+            />
+          )}
+          {screen.type === "photo-search" && (
+            <PhotoSearch
+              products={products.filter((p) => p.visible && p.approved)}
+              country={country}
+              onChoose={(product) => setScreen({ type: "product", product })}
+            />
+          )}
           {screen.type === "auth" && (
-            <AuthForm country={country} initialAction={screen.action} onSuccess={authenticated} />
+            <AuthForm
+              country={country}
+              initialAction={screen.action}
+              onSuccess={authenticated}
+            />
           )}
           {screen.type === "profile" && (
             <ProfileForm
@@ -940,6 +1435,8 @@ export default function MarketApp({ data, pageName = "index", content = [] }) {
           )}
           {screen.type === "product" && (
             <ProductDetail
+              key={chosen.id}
+              buyerCounts={buyerCounts}
               key={chosen.id}
               product={chosen}
               products={products}
@@ -1076,6 +1573,7 @@ export default function MarketApp({ data, pageName = "index", content = [] }) {
                   ["support", "Service client"],
                   ["profile", "Adresse et coordonnées"],
                   ["coupons", "Coupons"],
+                  ["subscriptions", "Abonnements de livraison & Prime"],
                   ["settings", "Paramètres du compte"],
                 ].map(([type, label]) => (
                   <button
@@ -1083,7 +1581,9 @@ export default function MarketApp({ data, pageName = "index", content = [] }) {
                     onClick={() =>
                       type === "profile"
                         ? setScreen({ type, role: profile.accountType })
-                        : account(type)
+                        : type === "subscriptions"
+                          ? setScreen({ type: "service", info: type })
+                          : account(type)
                     }
                   >
                     {label}
@@ -1139,6 +1639,9 @@ export default function MarketApp({ data, pageName = "index", content = [] }) {
               role={screen.role}
               country={country}
               config={config}
+              onManagePlan={() =>
+                setScreen({ type: "onboarding", role: "seller" })
+              }
               state={screen.state}
               onRefresh={async () =>
                 setScreen({
@@ -1161,8 +1664,18 @@ export default function MarketApp({ data, pageName = "index", content = [] }) {
               }}
             />
           )}
-          {screen.type === "support" && <Support faq={faq} lang={lang} />}
-          {screen.type === "coupons" && <Coupons country={country} />}
+          {screen.type === "support" && (
+            <Support
+              faq={faq}
+              lang={lang}
+              user={user}
+              country={country}
+              onContact={() => setScreen({ type: "contact" })}
+            />
+          )}
+          {screen.type === "coupons" && (
+            <Coupons country={country} products={products} />
+          )}
           {screen.type === "compare" && (
             <div className="yv-comparison">
               {products
@@ -1196,31 +1709,5 @@ export default function MarketApp({ data, pageName = "index", content = [] }) {
         </Modal>
       )}
     </div>
-  );
-}
-function Coupons({ country }) {
-  const [wallet, setWallet] = useState(null),
-    [error, setError] = useState("");
-  useEffect(() => {
-    api("/api/coupons", { country })
-      .then(setWallet)
-      .catch((e) => setError(e.message));
-  }, [country]);
-  return (
-    <section>
-      <p>Vos coupons YAVIYA</p>
-      {wallet && (
-        <>
-          <h3>{wallet.balance || 0} coupons</h3>
-          <p>Les avantages et conditions dépendent des offres disponibles.</p>
-          {wallet.events?.map((e) => (
-            <p key={e.id}>
-              {e.reference} · {e.delta}
-            </p>
-          ))}
-        </>
-      )}
-      {error && <p role="alert">{error}</p>}
-    </section>
   );
 }

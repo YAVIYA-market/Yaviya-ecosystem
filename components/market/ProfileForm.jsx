@@ -16,7 +16,7 @@ export default function ProfileForm({
     setError("");
     try {
       const data = Object.fromEntries(new FormData(event.currentTarget));
-      const value = await api("/api/customer", {
+      await api("/api/customer", {
         country,
         body: {
           ...data,
@@ -27,7 +27,12 @@ export default function ProfileForm({
           privacyVersion: "2026-10-02",
         },
       });
-      await onSaved(value);
+      const fullProfile = await api("/api/customer", { country });
+      if (!fullProfile)
+        throw Error(
+          "Votre profil a été enregistré mais ne peut pas encore être rechargé. Réessayez.",
+        );
+      await onSaved(fullProfile);
     } catch (e) {
       setError(e.message);
     } finally {

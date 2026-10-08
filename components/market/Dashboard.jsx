@@ -1,12 +1,21 @@
 import { useEffect, useState } from "react";
 import { api, amount, imageUrl } from "../../lib/market/api";
 import Orders from "./Orders";
+import {
+  WorkspaceOverview,
+  WorkspaceFinance,
+  WorkspaceStores,
+  WorkspaceSubscriptions,
+  WorkspaceAdvertising,
+} from "./WorkspacePanels";
 function ProductEditor({ product, state, country, config, onSaved }) {
   const [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
+    [existingImages, setExistingImages] = useState(product?.images || []),
     [category, setCategory] = useState(
       product?.category || config.categorySections[0][0],
     );
+  const editableSellerIds = product ? [product.seller] : state.sellerIds;
   async function save(e) {
     e.preventDefault();
     setBusy(true);
@@ -18,7 +27,15 @@ function ProductEditor({ product, state, country, config, onSaved }) {
           product?.id ||
           Math.max(10000, ...state.catalogue.map((p) => p.id)) + 1;
       const files = [...e.currentTarget.elements.photos.files];
-      const images = [...(product?.images || [])];
+      if (files.length && !state.sellerIds.includes(seller))
+        throw Error(
+          "Les nouvelles photos doivent être ajoutées par le propriétaire de la boutique.",
+        );
+      if (existingImages.length + files.length > 8)
+        throw Error(
+          "Un produit peut contenir jusqu’à 8 photos. Retirez une photo avant d’en ajouter.",
+        );
+      const images = [...existingImages];
       for (const file of files) {
         const form = new FormData();
         form.set("productId", String(id));
@@ -66,9 +83,9 @@ function ProductEditor({ product, state, country, config, onSaved }) {
         Boutique
         <select
           name="seller"
-          defaultValue={product?.seller || state.sellerIds[0]}
+          defaultValue={product?.seller || editableSellerIds[0]}
         >
-          {state.sellerIds.map((id) => (
+          {editableSellerIds.map((id) => (
             <option key={id} value={id}>
               {state.stores.find((s) => s.id === id)?.name || "Boutique " + id}
             </option>
@@ -155,10 +172,31 @@ function ProductEditor({ product, state, country, config, onSaved }) {
           accept="image/jpeg,image/png,image/webp"
         />
       </label>
-      {product?.images?.length > 0 && (
+      {existingImages.length > 0 && (
         <div className="yv-thumbnails">
-          {product.images.map((src) => (
-            <img key={src} src={imageUrl(src)} alt="Photo existante" />
+          {existingImages.map((src, i) => (
+            <div key={src}>
+              <img src={imageUrl(src)} alt={"Photo existante " + (i + 1)} />
+              <button
+                type="button"
+                onClick={() =>
+                  setExistingImages((images) => [
+                    src,
+                    ...images.filter((v) => v !== src),
+                  ])
+                }
+              >
+                {i === 0 ? "Photo principale" : "Définir principale"}
+              </button>
+              <button
+                type="button"
+                onClick={() =>
+                  setExistingImages((images) => images.filter((v) => v !== src))
+                }
+              >
+                Retirer la photo
+              </button>
+            </div>
           ))}
         </div>
       )}
@@ -371,8 +409,15 @@ function VerificationReview({ country, onRefresh }) {
     </section>
   );
 }
-export default function Dashboard({ role, country, config, state, onRefresh }) {
-  const [tab, setTab] = useState("orders"),
+export default function Dashboard({
+  role,
+  country,
+  config,
+  state,
+  onRefresh,
+  onManagePlan,
+}) {
+  const [tab, setTab] = useState("overview"),
     [report, setReport] = useState(null),
     [period, setPeriod] = useState("30"),
     [error, setError] = useState(""),
@@ -416,11 +461,14 @@ export default function Dashboard({ role, country, config, state, onRefresh }) {
     }
   }
   const tabs = [
+    ["overview", "Vue d’ensemble"],
     ["orders", "Commandes"],
     ...(role !== "courier"
       ? [
           ["products", "Produits"],
           ["stats", "Statistiques"],
+          ["finance", role === "seller" ? "Paiements" : "Finance"],
+          ...(role === "seller" ? [["subscriptions", "Abonnements"]] : []),
         ]
       : [["availability", "Disponibilité"]]),
     ["messages", "Discussions"],
@@ -428,6 +476,8 @@ export default function Dashboard({ role, country, config, state, onRefresh }) {
       ? [
           ["verification", "Vérifications"],
           ["courierMessages", "Discussions livreurs"],
+          ["stores", "Boutiques"],
+          ["advertising", "Publicités"],
         ]
       : []),
   ];
@@ -440,212 +490,266 @@ export default function Dashboard({ role, country, config, state, onRefresh }) {
             ? "ESPACE LIVREUR"
             : "ADMINISTRATION"}
       </p>
-      <nav className="yv-tabs">
-        {tabs.map(([id, label]) => (
-          <button
-            key={id}
-            aria-pressed={tab === id}
-            onClick={() => {
-              setTab(id);
-              setError("");
-            }}
-          >
-            {label}
-          </button>
-        ))}
-      </nav>
-      {tab === "orders" && (
-        <Orders
-          state={state}
-          country={country}
-          role={role}
-          onRefresh={onRefresh}
-        />
-      )}
-      {tab === "products" && (
-        <>
-          <div className="yv-heading">
-            <h3>Gestion du catalogue</h3>
+      <div className="yv-dashboard-title">
+        <h2>
+          {role === "seller"
+            ? state.profile?.name + " · ma boutique"
+            : role === "courier"
+              ? "Mes missions, mon activité"
+              : "Piloter YAVIYA"}
+        </h2>
+        <span>
+          {state.profile?.sellerNumber ||
+            state.profile?.courierNumber ||
+            state.profile?.customerNumber}
+        </span>
+        <button onClick={onRefresh}>Actualiser</button>
+      </div>
+      <div className="yv-dashboard-layout">
+        <nav className="yv-tabs" aria-label="Navigation de mon espace">
+          {tabs.map(([id, label]) => (
             <button
+              key={id}
+              aria-pressed={tab === id}
               onClick={() => {
-                setAdding(!adding);
-                setEditing(null);
+                setTab(id);
+                setError("");
               }}
             >
-              Ajouter un produit
+              {label}
             </button>
-          </div>
-          {(adding || editing) && (
-            <ProductEditor
-              key={editing?.id || "new"}
-              product={editing}
+          ))}
+        </nav>
+        <div className="yv-dashboard-body">
+          {tab === "overview" && (
+            <WorkspaceOverview
               state={state}
+              role={role}
               country={country}
-              config={config}
-              onSaved={async () => {
-                setAdding(false);
-                setEditing(null);
-                await onRefresh();
-              }}
+              onTab={setTab}
             />
           )}
-          <div className="yv-table">
-            <table>
-              <thead>
-                <tr>
-                  <th>Produit</th>
-                  <th>Prix</th>
-                  <th>Stock</th>
-                  <th>Statut</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {state.catalogue
-                  .filter(
-                    (p) =>
-                      role === "admin" || state.sellerIds.includes(p.seller),
-                  )
-                  .map((p) => (
-                    <tr key={p.id}>
-                      <td>{p.title}</td>
-                      <td>{amount(p.price, country)}</td>
-                      <td>{p.stock}</td>
-                      <td>{p.approved ? "Validé" : "À valider"}</td>
-                      <td>
-                        <button
-                          onClick={() => {
-                            setEditing(p);
-                            setAdding(false);
-                          }}
-                        >
-                          Modifier
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-              </tbody>
-            </table>
-          </div>
-        </>
-      )}
-      {tab === "stats" && (
-        <>
-          <label>
-            Période
-            <select value={period} onChange={(e) => setPeriod(e.target.value)}>
-              {[
-                ["7", "7 jours"],
-                ["30", "30 jours"],
-                ["quarter", "Trimestre"],
-                ["semester", "Semestre"],
-                ["year", "Année"],
-                ["all", "Depuis le début"],
-              ].map(([v, l]) => (
-                <option key={v} value={v}>
-                  {l}
-                </option>
-              ))}
-            </select>
-          </label>
-          {report && (
+          {tab === "finance" && (
+            <WorkspaceFinance
+              state={state}
+              role={role}
+              country={country}
+              onOrders={() => setTab("orders")}
+            />
+          )}
+          {tab === "stores" && <WorkspaceStores state={state} />}
+          {tab === "subscriptions" && (
+            <WorkspaceSubscriptions country={country} onManage={onManagePlan} />
+          )}
+          {tab === "advertising" && <WorkspaceAdvertising />}
+          {tab === "orders" && (
+            <Orders
+              state={state}
+              country={country}
+              role={role}
+              onRefresh={onRefresh}
+            />
+          )}
+          {tab === "products" && (
             <>
-              <div className="yv-stat-grid">
-                {Object.entries(report.totals || {}).map(([k, v]) => (
-                  <p key={k}>
-                    {{
-                      views: "Vues",
-                      uniqueViewers: "Visiteurs uniques",
-                      buyerCount: "Acheteurs",
-                      units: "Unités",
-                      orderCount: "Commandes",
-                    }[k] || k}
-                    <b>{v}</b>
-                  </p>
-                ))}
+              <div className="yv-heading">
+                <h3>Gestion du catalogue</h3>
+                <button
+                  disabled={!state.sellerIds.length}
+                  title={
+                    !state.sellerIds.length
+                      ? "Les nouveaux produits sont ajoutés depuis une boutique autorisée."
+                      : undefined
+                  }
+                  onClick={() => {
+                    setAdding(!adding);
+                    setEditing(null);
+                  }}
+                >
+                  Ajouter un produit
+                </button>
               </div>
+              {(adding || editing) && (
+                <ProductEditor
+                  key={editing?.id || "new"}
+                  product={editing}
+                  state={state}
+                  country={country}
+                  config={config}
+                  onSaved={async () => {
+                    setAdding(false);
+                    setEditing(null);
+                    await onRefresh();
+                  }}
+                />
+              )}
               <div className="yv-table">
                 <table>
                   <thead>
                     <tr>
                       <th>Produit</th>
-                      <th>Vues</th>
-                      <th>Visiteurs</th>
-                      <th>Acheteurs</th>
+                      <th>Prix</th>
+                      <th>Stock</th>
+                      <th>Statut</th>
+                      <th>Action</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {report.rows.map((r) => (
-                      <tr key={r.country + ":" + r.productId}>
-                        <td>{r.title}</td>
-                        <td>{r.views}</td>
-                        <td>{r.uniqueViewers}</td>
-                        <td>{r.buyerCount}</td>
-                      </tr>
-                    ))}
+                    {state.catalogue
+                      .filter(
+                        (p) =>
+                          role === "admin" ||
+                          state.sellerIds.includes(p.seller),
+                      )
+                      .map((p) => (
+                        <tr key={p.id}>
+                          <td>{p.title}</td>
+                          <td>{amount(p.price, country)}</td>
+                          <td>{p.stock}</td>
+                          <td>{p.approved ? "Validé" : "À valider"}</td>
+                          <td>
+                            <button
+                              onClick={() => {
+                                setEditing(p);
+                                setAdding(false);
+                              }}
+                            >
+                              Modifier
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
                   </tbody>
                 </table>
               </div>
             </>
           )}
-        </>
-      )}
-      {tab === "availability" && (
-        <form className="yv-form" onSubmit={availability}>
-          <h3>Mes disponibilités et règlements</h3>
-          <label className="yv-check">
-            <input
-              name="available"
-              type="checkbox"
-              defaultChecked={!!state.courierSettings?.available}
-            />
-            Disponible pour des missions
-          </label>
-          <label>
-            Méthode
-            <select
-              name="payoutMethod"
-              defaultValue={
-                state.courierSettings?.payoutMethod || "mobile_money"
-              }
-            >
-              <option value="mobile_money">Mobile Money</option>
-              <option value="bank">Banque</option>
-              <option value="cash">Espèces</option>
-            </select>
-          </label>
-          <label>
-            Compte de règlement
-            <input
-              name="payoutAccount"
-              defaultValue={state.courierSettings?.payoutAccount || ""}
-              maxLength={150}
-            />
-          </label>
-          <label className="yv-check">
-            <input
-              name="benefitsAccepted"
-              type="checkbox"
-              required
-              defaultChecked={!!state.courierSettings?.benefitsAccepted}
-            />
-            Je confirme mes tâches et les conditions de règlement.
-          </label>
-          <button className="yv-primary" disabled={busy}>
-            Confirmer ma disponibilité
-          </button>
-        </form>
-      )}
-      {tab === "messages" && <DirectMessages role={role} country={country} />}{" "}
-      {tab === "courierMessages" && <AdminCourierMessages country={country} />}
-      {tab === "verification" && (
-        <VerificationReview country={country} onRefresh={onRefresh} />
-      )}
-      {error && (
-        <p role="alert" className="yv-error">
-          {error}
-        </p>
-      )}
+          {tab === "stats" && (
+            <>
+              <label>
+                Période
+                <select
+                  value={period}
+                  onChange={(e) => setPeriod(e.target.value)}
+                >
+                  {[
+                    ["7", "7 jours"],
+                    ["30", "30 jours"],
+                    ["quarter", "Trimestre"],
+                    ["semester", "Semestre"],
+                    ["year", "Année"],
+                    ["all", "Depuis le début"],
+                  ].map(([v, l]) => (
+                    <option key={v} value={v}>
+                      {l}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              {report && (
+                <>
+                  <div className="yv-stat-grid">
+                    {Object.entries(report.totals || {}).map(([k, v]) => (
+                      <p key={k}>
+                        {{
+                          views: "Vues",
+                          uniqueViewers: "Visiteurs uniques",
+                          buyerCount: "Acheteurs",
+                          units: "Unités",
+                          orderCount: "Commandes",
+                        }[k] || k}
+                        <b>{v}</b>
+                      </p>
+                    ))}
+                  </div>
+                  <div className="yv-table">
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>Produit</th>
+                          <th>Vues</th>
+                          <th>Visiteurs</th>
+                          <th>Acheteurs</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {report.rows.map((r) => (
+                          <tr key={r.country + ":" + r.productId}>
+                            <td>{r.title}</td>
+                            <td>{r.views}</td>
+                            <td>{r.uniqueViewers}</td>
+                            <td>{r.buyerCount}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
+              )}
+            </>
+          )}
+          {tab === "availability" && (
+            <form className="yv-form" onSubmit={availability}>
+              <h3>Mes disponibilités et règlements</h3>
+              <label className="yv-check">
+                <input
+                  name="available"
+                  type="checkbox"
+                  defaultChecked={!!state.courierSettings?.available}
+                />
+                Disponible pour des missions
+              </label>
+              <label>
+                Méthode
+                <select
+                  name="payoutMethod"
+                  defaultValue={
+                    state.courierSettings?.payoutMethod || "mobile_money"
+                  }
+                >
+                  <option value="mobile_money">Mobile Money</option>
+                  <option value="bank">Banque</option>
+                  <option value="cash">Espèces</option>
+                </select>
+              </label>
+              <label>
+                Compte de règlement
+                <input
+                  name="payoutAccount"
+                  defaultValue={state.courierSettings?.payoutAccount || ""}
+                  maxLength={150}
+                />
+              </label>
+              <label className="yv-check">
+                <input
+                  name="benefitsAccepted"
+                  type="checkbox"
+                  required
+                  defaultChecked={!!state.courierSettings?.benefitsAccepted}
+                />
+                Je confirme mes tâches et les conditions de règlement.
+              </label>
+              <button className="yv-primary" disabled={busy}>
+                Confirmer ma disponibilité
+              </button>
+            </form>
+          )}
+          {tab === "messages" && (
+            <DirectMessages role={role} country={country} />
+          )}{" "}
+          {tab === "courierMessages" && (
+            <AdminCourierMessages country={country} />
+          )}
+          {tab === "verification" && (
+            <VerificationReview country={country} onRefresh={onRefresh} />
+          )}
+          {error && (
+            <p role="alert" className="yv-error">
+              {error}
+            </p>
+          )}
+        </div>
+      </div>
     </section>
   );
 }

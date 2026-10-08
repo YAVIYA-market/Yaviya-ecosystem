@@ -34,3 +34,8 @@ Le dernier test démarre le build Next.js avec une base SQLite temporaire. Il ut
 - Les migrations SQLite ne sont jamais exécutées sur PostgreSQL. Les migrations Supabase sont gérées séparément.
 - Les paiements électroniques, abonnements facturés, escrow et reversements automatiques restent soumis à l'activation des opérateurs et de la banque. La commande de démonstration utilise les espèces à réception.
 - La base de démonstration contient 60 produits par marché. Leur identité technique n'a aucun accès administrateur. Les boutiques commerciales doivent être enregistrées et validées séparément.
+
+
+## Reprise des fonctions précédentes
+
+Voir `docs/FEATURE_PARITY.md` pour le rapprochement avec les anciens modules, les parcours contrôlés et les limites commerciales. Le haut de page conserve la nouvelle disposition ; les espaces professionnels retrouvent une navigation latérale sur ordinateur.

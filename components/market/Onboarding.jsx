@@ -1,5 +1,8 @@
 import { useState } from "react";
 import ProfileForm from "./ProfileForm";
+import { SellerPlans } from "./ServiceInfo";
+import { sellerPlans } from "../../lib/market/plans";
+import { amount } from "../../lib/market/api";
 import { api } from "../../lib/market/api";
 export default function Onboarding({
   role,
@@ -214,6 +217,12 @@ export default function Onboarding({
           {step === 3 && (
             <>
               <h3>Choisir votre abonnement</h3>
+              {seller && (
+                <SellerPlans
+                  country={country}
+                  onChoose={(id) => field("sellerPlan", id)}
+                />
+              )}
               {seller ? (
                 <label>
                   Forfait
@@ -221,13 +230,14 @@ export default function Onboarding({
                     value={values.sellerPlan}
                     onChange={(e) => field("sellerPlan", e.target.value)}
                   >
-                    <option value="free">Free — 0 FC</option>
-                    <option value="plus">Plus — 35 000 FC / mois</option>
-                    <option value="premium">Premium — 75 000 FC / mois</option>
-                    <option value="business">
-                      Business — 250 000 FC / mois
-                    </option>
-                    <option value="enterprise">Enterprise — sur accord</option>
+                    {sellerPlans.map((plan) => (
+                      <option key={plan.id} value={plan.id}>
+                        {plan.name} —{" "}
+                        {plan.monthly === null
+                          ? "sur accord"
+                          : amount(plan.monthly, country) + " / mois"}
+                      </option>
+                    ))}
                   </select>
                 </label>
               ) : (

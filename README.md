@@ -6,6 +6,8 @@ Next.js 16 et React 19 exécutent désormais les pages de la marketplace. `compo
 
 Le build génère les assets publics puis compile Next.js. Les pièces d'identité, preuves de livraison et secrets ne sont jamais copiés dans les assets. La page de confidentialité conserve son contenu existant, rendu sous forme d'éléments React.
 
+La reprise des fonctions précédentes est documentée dans [FEATURE_PARITY.md](docs/FEATURE_PARITY.md).
+
 Validation : `npm test`, `npm run build`, puis `npm run test:next`. Ce dernier démarre le serveur compilé avec une base SQLite isolée et teste la vraie chaîne HTTP → React → API → commande → suivi. Les contrôles de production PostgreSQL restent nécessaires après déploiement. L'interface de démonstration ne remplace pas l'activation des prestataires de paiement ni la configuration du propriétaire administrateur.
 
 Version 1.9.0 : adaptateur PostgreSQL activable sur Vercel, schéma d’exécution privé et rôle Supabase à privilèges minimaux. SQLite reste disponible uniquement pour le développement et les tests locaux.
@@ -31,7 +33,7 @@ npm ci
 npm run dev
 ```
 
-Ouvrir http://127.0.0.1:3000. Les migrations sont appliquées automatiquement au démarrage local. La base SQLite se trouve dans `.local/`, exclue de Git. La connexion utilise un e-mail ou un téléphone et un mot de passe de 12 à 128 caractères. Le profil conserve son formulaire d'origine et ses identifiants YVC/YVYS/YVYC.
+Ouvrir http://127.0.0.1:3000. Les migrations sont appliquées automatiquement au démarrage local. La base SQLite se trouve dans `.local/`, exclue de Git. La connexion utilise un e-mail ou un téléphone et un mot de passe de 8 à 128 caractères, avec majuscule, minuscule, chiffre et caractère spécial. Le profil conserve son formulaire d'origine et ses identifiants YVC/YVYS/YVYC.
 
 ```bash
 npm test

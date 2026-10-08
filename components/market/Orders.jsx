@@ -6,17 +6,23 @@ function OrderChat({ order, country, role }) {
     [busy, setBusy] = useState(false);
   useEffect(() => {
     let live = true;
-    api("/api/marketplace/messages?orderId=" + encodeURIComponent(order.id), {
-      country,
-    })
-      .then((v) => {
-        if (live) setMessages(v);
+    const load = () =>
+      api("/api/marketplace/messages?orderId=" + encodeURIComponent(order.id), {
+        country,
       })
-      .catch((e) => {
-        if (live) setError(e.message);
-      });
+        .then((v) => {
+          if (live) setMessages(v);
+        })
+        .catch((e) => {
+          if (live) setError(e.message);
+        });
+    load();
+    const timer = setInterval(() => {
+      if (document.visibilityState !== "hidden") load();
+    }, 10000);
     return () => {
       live = false;
+      clearInterval(timer);
     };
   }, [order.id, country]);
   async function send(e) {
@@ -133,6 +139,7 @@ function ReviewForm({ order, country, onDone }) {
 function Order({ order, country, role, sellerIds, onRefresh }) {
   const [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
+    [cashCollected, setCashCollected] = useState(false),
     [chat, setChat] = useState(false),
     [rated, setRated] = useState(false);
   async function act(action, extra = {}) {
@@ -144,6 +151,18 @@ function Order({ order, country, role, sellerIds, onRefresh }) {
         body: { orderId: order.id, revision: order.revision, action, ...extra },
       });
       await onRefresh();
+      if (action === "buyer_receipt")
+        await api("/api/coupons", {
+          country,
+          body: {
+            kind: "earn",
+            reference: order.id,
+            amount: order.items.reduce(
+              (sum, item) => sum + item.price * item.q,
+              0,
+            ),
+          },
+        });
     } catch (e) {
       setError(e.message);
       if (e.status === 409) await onRefresh();
@@ -213,6 +232,27 @@ function Order({ order, country, role, sellerIds, onRefresh }) {
           </p>
         </div>
       )}
+      {role === "seller" &&
+        !order.cancelled &&
+        !order.requestedCourier &&
+        order.step === 3 &&
+        sellerIds
+          .filter(
+            (id) =>
+              Object.hasOwn(order.sellerSteps, id) &&
+              !order.sellerCashConfirmed?.[id],
+          )
+          .map((id) => (
+            <button
+              key={id}
+              disabled={busy}
+              onClick={() =>
+                act("cash_confirm", { sellerId: id, side: "seller" })
+              }
+            >
+              Confirmer les espèces encaissées · boutique {id}
+            </button>
+          ))}
       {!order.cancelled && (
         <div className="yv-actions">
           {role === "buyer" && order.step === 3 && !order.buyerConfirmed && (
@@ -251,12 +291,27 @@ function Order({ order, country, role, sellerIds, onRefresh }) {
                       Colis prêt
                     </button>
                   ) : !order.requestedCourier && order.sellerSteps[id] < 3 ? (
-                    <button
-                      disabled={busy}
-                      onClick={() => act("seller_handover", { sellerId: id })}
-                    >
-                      Confirmer la remise
-                    </button>
+                    <div>
+                      <label className="yv-check">
+                        <input
+                          type="checkbox"
+                          checked={cashCollected}
+                          onChange={(e) => setCashCollected(e.target.checked)}
+                        />
+                        Paiement en espèces encaissé
+                      </label>
+                      <button
+                        disabled={busy}
+                        onClick={() =>
+                          act("seller_handover", {
+                            sellerId: id,
+                            cashCollected,
+                          })
+                        }
+                      >
+                        Confirmer la remise
+                      </button>
+                    </div>
                   ) : null}
                 </div>
               ))}
@@ -378,15 +433,13 @@ function Order({ order, country, role, sellerIds, onRefresh }) {
   );
 }
 export default function Orders({ state, country, role, onRefresh }) {
-  const orders =
+  const orders = state.orders;
+  const opportunities =
     role === "courier"
-      ? [
-          ...state.orders,
-          ...(state.opportunities || []).filter(
-            (o) => !state.orders.some((v) => v.id === o.id),
-          ),
-        ]
-      : state.orders;
+      ? (state.opportunities || []).filter(
+          (o) => !orders.some((order) => order.id === o.id),
+        )
+      : [];
   return (
     <section>
       <div className="yv-heading">
@@ -397,7 +450,17 @@ export default function Orders({ state, country, role, onRefresh }) {
         </h3>
         <button onClick={onRefresh}>Actualiser</button>
       </div>
-      {!orders.length && <p>Aucune commande pour cet espace.</p>}
+      {!orders.length && !opportunities.length && (
+        <p>Aucune commande pour cet espace.</p>
+      )}
+      {opportunities.map((opportunity) => (
+        <CourierOpportunity
+          key={opportunity.id}
+          opportunity={opportunity}
+          country={country}
+          onRefresh={onRefresh}
+        />
+      ))}
       {orders.map((o) => (
         <Order
           key={o.id}
@@ -409,5 +472,51 @@ export default function Orders({ state, country, role, onRefresh }) {
         />
       ))}
     </section>
+  );
+}
+
+function CourierOpportunity({ opportunity, country, onRefresh }) {
+  const [busy, setBusy] = useState(false),
+    [error, setError] = useState("");
+  async function claim() {
+    setBusy(true);
+    setError("");
+    try {
+      await api("/api/marketplace/orders/action", {
+        country,
+        body: {
+          orderId: opportunity.id,
+          revision: opportunity.revision,
+          action: "courier_claim",
+        },
+      });
+      await onRefresh();
+    } catch (e) {
+      setError(e.message);
+      if (e.status === 409) await onRefresh();
+    } finally {
+      setBusy(false);
+    }
+  }
+  return (
+    <article className="yv-order yv-opportunity">
+      <p className="yv-eyebrow">MISSION DISPONIBLE</p>
+      <h3>{opportunity.id}</h3>
+      <p>
+        {opportunity.city} · {opportunity.commune} · {opportunity.parcels} colis
+      </p>
+      <p>
+        Rémunération prévue : <b>{amount(opportunity.earnings, country)}</b>
+      </p>
+      <p>Les détails de la commande sont disponibles après affectation.</p>
+      <button className="yv-primary" disabled={busy} onClick={claim}>
+        {busy ? "Affectation…" : "Accepter cette mission"}
+      </button>
+      {error && (
+        <p className="yv-error" role="alert">
+          {error}
+        </p>
+      )}
+    </article>
   );
 }
