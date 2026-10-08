@@ -5,12 +5,13 @@
   "scripts": {
     "dev": "node --env-file-if-exists=.env scripts/migrate.mjs && node scripts/prepare-next.mjs && next dev --webpack",
     "start": "next start",
-    "build": "node scripts/build.mjs && node scripts/prepare-next.mjs && next build --webpack",
+    "build": "node scripts/prepare-next.mjs && next build --webpack",
     "dev:legacy": "node scripts/build.mjs && node --env-file-if-exists=.env scripts/dev.mjs --dist",
     "check": "node scripts/check.mjs",
     "test": "npm run check && node --test tests/*.test.mjs",
     "db:migrate": "node --env-file-if-exists=.env scripts/migrate.mjs",
-    "db:owner": "node --env-file-if-exists=.env scripts/create-owner.mjs"
+    "db:owner": "node --env-file-if-exists=.env scripts/create-owner.mjs",
+    "test:next": "node scripts/test-next.mjs"
   },
   "type": "module",
   "engines": {

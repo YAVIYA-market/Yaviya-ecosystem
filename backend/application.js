@@ -13,7 +13,7 @@ export function createApplication(db) {
       if (url.pathname.startsWith("/api/auth/"))
         return await handleAuth(request, db);
       const user = await authenticatedUser(request, db);
-      if (user && db.dialect === "postgres") {
+      if (user && db.dialect === "postgres" && !["/api/customer", "/api/catalogue", "/api/coupons"].includes(url.pathname)) {
         const admin = await db.prepare("SELECT user_id FROM admin_access WHERE user_id=?").bind(user.id).first();
         if (admin) {
           const mfa = await db.prepare("SELECT enabled FROM auth_mfa WHERE user_id=?").bind(user.id).first();

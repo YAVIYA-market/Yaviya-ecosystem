@@ -1,4 +1,6 @@
-import MarketplacePage from '../components/MarketplacePage';
-import { loadSitePage } from '../lib/legacy-pages';
-export default MarketplacePage;
-export async function getStaticProps() { return { props: { page: await loadSitePage('index') } }; }
+import MarketApp from "../components/market/MarketApp";
+import { marketData } from "../lib/market/data";
+export default MarketApp;
+export async function getStaticProps() {
+  return { props: { data: await marketData() } };
+}

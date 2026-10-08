@@ -929,7 +929,7 @@ export async function handleMarketplace(request, env) {
       if (request.method === "GET") {
         const messages = (
           await env.DB.prepare(
-            "SELECT m.id,m.sender_role AS senderRole,m.message,m.created_at AS createdAt,c.name AS senderName FROM market_messages m LEFT JOIN customers c ON c.user_id=m.sender_user_id WHERE m.order_id=? ORDER BY m.created_at DESC,m.rowid DESC LIMIT 100",
+            "SELECT m.id,m.sender_role AS senderRole,m.message,m.created_at AS createdAt,c.name AS senderName FROM market_messages m LEFT JOIN customers c ON c.user_id=m.sender_user_id WHERE m.order_id=? ORDER BY m.created_at DESC,m.id DESC LIMIT 100",
           )
             .bind(orderId)
             .all()

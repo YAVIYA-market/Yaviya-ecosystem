@@ -52,7 +52,7 @@ export async function handleCourierMessages(request, env) {
         return json({ error: "Courier not found in this country" }, 404);
       const messages = (
         await env.DB.prepare(
-          "SELECT id,sender,message,created_at AS createdAt FROM courier_messages WHERE country=? AND courier_user_id=? ORDER BY created_at DESC,rowid DESC LIMIT 100",
+          "SELECT id,sender,message,created_at AS createdAt FROM courier_messages WHERE country=? AND courier_user_id=? ORDER BY created_at DESC,id DESC LIMIT 100",
         )
           .bind(country, target)
           .all()

@@ -72,9 +72,11 @@ async function canEdit(env, user, seller) {
     .first());
 }
 export async function handleProductPhotos(request, env) {
-  const user = request.headers.get("yaviya-user-id"),
-    url = new URL(request.url);
-  if (!user) return json({ error: "Sign in required" }, 401);
+  const identity = request.headers.get("yaviya-user-id"),
+    url = new URL(request.url),
+    publicImage = request.method === "GET" && url.pathname === "/api/product-photos/image",
+    user = identity || (url.searchParams.get("country") === "CG" ? "cg:anonymous" : "anonymous");
+  if (!identity && !publicImage) return json({ error: "Sign in required" }, 401);
   if (request.method !== "GET" && request.headers.get("origin") !== url.origin)
     return json({ error: "Origin rejected" }, 403);
   try {
@@ -87,7 +89,7 @@ export async function handleProductPhotos(request, env) {
       let row = await env.DB.prepare(
         "SELECT object_key,content_type FROM product_photos WHERE id=? AND user_id=?",
       )
-        .bind(id, user)
+        .bind(id, identity || "")
         .first();
       if (!row) {
         const shared = (
@@ -98,7 +100,7 @@ export async function handleProductPhotos(request, env) {
             .all()
         ).results.some((p) => {
           const value = JSON.parse(p.data);
-          return value.approved && value.visible;
+          return value.approved && value.visible && [value.img, ...(value.images || [])].some(src => src?.includes("photoId=" + id + "&"));
         });
         if (!shared) return json({ error: "Photo not found" }, 404);
         const published = await env.DB.prepare(

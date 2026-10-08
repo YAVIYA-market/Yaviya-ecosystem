@@ -2,9 +2,11 @@
 
 ## Migration Next.js
 
-La branche `migration/nextjs` utilise Next.js 16 pour les pages, les assets et l'API Node. `pages/` contient les routes, `components/MarketplacePage.jsx` le composant de compatibilité, `lib/legacy-pages.js` la préparation des pages et `backend/` les règles métier. Les interfaces HTML et les scripts existants sont conservés ; leur conversion en composants React indépendants reste une étape ultérieure. Les liens historiques `.html` fonctionnent toujours.
+Next.js 16 et React 19 exécutent désormais les pages de la marketplace. `components/market/` contient les composants du catalogue, du compte, des inscriptions, du checkout, des commandes et des espaces professionnels. Les anciennes pages HTML et leurs scripts restent uniquement comme référence et pour `npm run dev:legacy` ; ils ne sont plus chargés par les pages Next.js. Les liens historiques `.html` restent disponibles.
 
-Le build génère `public/` depuis les sources frontend, puis compile Next.js. `npm run dev:legacy` permet de comparer avec l'ancien serveur. Aucun secret ni fichier d'identité n'est copié dans les assets publics.
+Le build génère les assets publics puis compile Next.js. Les pièces d'identité, preuves de livraison et secrets ne sont jamais copiés dans les assets. La page de confidentialité conserve son contenu existant, rendu sous forme d'éléments React.
+
+Validation : `npm test`, `npm run build`, puis `npm run test:next`. Ce dernier démarre le serveur compilé avec une base SQLite isolée et teste la vraie chaîne HTTP → React → API → commande → suivi. Les contrôles de production PostgreSQL restent nécessaires après déploiement. L'interface de démonstration ne remplace pas l'activation des prestataires de paiement ni la configuration du propriétaire administrateur.
 
 Version 1.9.0 : adaptateur PostgreSQL activable sur Vercel, schéma d’exécution privé et rôle Supabase à privilèges minimaux. SQLite reste disponible uniquement pour le développement et les tests locaux.
 
@@ -53,8 +55,8 @@ Le projet GitHub doit être relié au projet Vercel `yaviyaecosystem`, avec la r
 
 | Emplacement                  | Rôle                                                                                      |
 | ---------------------------- | ----------------------------------------------------------------------------------------- |
-| `frontend/pages/`            | Cinq pages HTML, dont les portails RDC et Congo                                           |
-| `frontend/src/`              | Scripts classiques du catalogue, comptes et parcours métier                               |
+| `pages/`                     | Routes Next.js, documents et API                                           |
+| `components/market/`         | Interfaces React du catalogue, comptes et parcours métier                               |
 | `frontend/styles/`           | Styles responsive                                                                         |
 | `frontend/assets/images/`    | 34 images originales et 30 vues produits supplémentaires                                                           |
 | `api/handler.js`             | Fonction Vercel : conversion HTTP vers les gestionnaires existants                        |

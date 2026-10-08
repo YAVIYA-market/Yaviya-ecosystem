@@ -1,8 +1,9 @@
-import { mkdir, readdir, copyFile, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, readdir, copyFile, rm } from 'node:fs/promises';
+// public/ is generated and ignored by Git. Next bundles styles and React code;
+// the old browser scripts are retained only in the legacy source directory.
+await rm('public', { recursive: true, force: true });
 await mkdir('public', { recursive: true });
-for (const folder of ['frontend/src', 'frontend/styles', 'frontend/assets/images']) {
-  for (const name of await readdir(folder)) await copyFile(`${folder}/${name}`, `public/${name}`);
+for (const name of await readdir('frontend/assets/images')) {
+  await copyFile(`frontend/assets/images/${name}`, `public/${name}`);
 }
-const config = JSON.parse(await readFile('backend/data/market-config.json', 'utf8'));
-await writeFile('public/market-config.js', `window.YAVIYA_MARKET_CONFIG = ${JSON.stringify(config)};\n`);
-console.log('Assets Next.js préparés sans secrets ni documents privés.');
+console.log('Images publiques préparées ; aucun script classique, secret ou document privé.');

@@ -1,6 +1,10 @@
 import { readFile, readdir } from "node:fs/promises";
 import { createDatabase } from "../backend/database.js";
 export async function migrate(db) {
+  if (db.dialect === "postgres") {
+    console.log("PostgreSQL : utiliser les migrations Supabase versionnées, aucune migration SQLite exécutée.");
+    return;
+  }
   await db
     .prepare(
       "CREATE TABLE IF NOT EXISTS yaviya_migrations (name TEXT PRIMARY KEY, applied_at INTEGER NOT NULL)",
