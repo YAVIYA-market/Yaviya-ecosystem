@@ -37,6 +37,8 @@ export async function passwordMatches(password, encoded) {
   return a.length === b.length && timingSafeEqual(a, b);
 }
 function sessionToken(request) {
+  const authorization = request.headers.get("authorization");
+  if (authorization !== null) return /^Bearer yv\.([a-f0-9]{64})$/.exec(authorization)?.[1] || "";
   return (
     request.headers
       .get("cookie")
@@ -47,7 +49,7 @@ function sessionToken(request) {
   );
 }
 export async function authenticatedUser(request, db) {
-  if (request.headers.has("authorization")) {
+  if (request.headers.has("authorization") && !request.headers.get("authorization").startsWith("Bearer yv.")) {
     const { supabaseIdentity } = await import("./supabase-auth.js");
     const identity = await supabaseIdentity(request);
     if (!identity) return null;
@@ -98,6 +100,10 @@ export async function startSession(request, db, user, mfaGeneration = null) {
 }
 
 export async function handleAuth(request, db) {
+  if (new URL(request.url).pathname.startsWith("/api/auth/mobile/")) {
+    const { handleMobileAuth } = await import("./mobile-auth.js");
+    return handleMobileAuth(request, db, handleAuth);
+  }
   const action = new URL(request.url).pathname.split("/").at(-1);
   if (["phone-send", "phone-verify"].includes(action)) {
     const { handlePhoneAuth } = await import("./phone-auth.js");

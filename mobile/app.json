@@ -1,0 +1,41 @@
+{
+  "expo": {
+    "name": "YAVIYA",
+    "slug": "yaviya-mobile",
+    "scheme": "yaviya",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "cd.yaviya.app",
+      "config": {
+        "usesNonExemptEncryption": false
+      }
+    },
+    "android": {
+      "package": "cd.yaviya.app",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/icon.png",
+        "backgroundColor": "#c2410c"
+      }
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "output": "single"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Autorisez YAVIYA à sélectionner les photos de vos produits, de votre pièce et de vos livraisons.",
+          "cameraPermission": "Autorisez YAVIYA à prendre une photo pour votre produit ou votre livraison.",
+          "microphonePermission": false
+        }
+      ]
+    ]
+  }
+}
