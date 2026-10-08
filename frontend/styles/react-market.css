@@ -1832,3 +1832,8 @@ hr {
   .yv-hero-controls button { font-size: 12px; padding: 8px 10px; }
 }
 @media(prefers-reduced-motion: reduce) { .yv-hero-motion, .yv-hero-frame img { animation: none; } }
+/* Preview role selector stays outside the storefront. */
+.yv-workspace-nav { max-width: none; padding-left: 5vw; padding-right: 5vw; background: #f1f5f9; border-bottom: 1px solid #dce2e9; }
+.yv-workspace-nav > span { color: #475569; font-size: 14px; }
+.yv-header-actions { justify-content: flex-end; }
+@media(max-width: 700px) { .yv-workspace-nav { padding: 10px 12px; } }

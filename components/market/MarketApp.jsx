@@ -661,6 +661,24 @@ export default function MarketApp({ data, pageName = "index", content = [] }) {
     chosen?.title ||
     "YAVIYA";
   return (
+    <>
+      <nav className="yv-workspace-nav" aria-label="Vues YAVIYA">
+        <span>Votre espace</span>
+        {[
+          ["buyer", "Acheteur"],
+          ["seller", "Vendeur"],
+          ["courier", "Livreur"],
+          ["admin", "Admin"],
+        ].map(([role, label]) => (
+          <button
+            key={role}
+            aria-pressed={screen?.role === role}
+            onClick={() => setScreen({ type: "workspace-intro", role })}
+          >
+            Vue {label}
+          </button>
+        ))}
+      </nav>
     <div className="yv-app" data-ready={hydrated}>
       <Head>
         <title>
@@ -692,15 +710,15 @@ export default function MarketApp({ data, pageName = "index", content = [] }) {
             <Icon name="heart" />
             <span>{t("Favoris", "Favourites")}</span>
           </button>
-          <button onClick={() => account()}>
-            <Icon name="user" />
-            <span>{t("Profil", "Profile")}</span>
-          </button>
           <button onClick={() => setScreen({ type: "cart" })}>
             <Icon name="cart" />
             <span>
               {t("Panier", "Cart")} <b>{cart.reduce((n, i) => n + i.q, 0)}</b>
             </span>
+          </button>
+          <button onClick={() => account()}>
+            <Icon name="user" />
+            <span>{t("Profil", "Profile")}</span>
           </button>
         </div>
         <form
@@ -800,23 +818,6 @@ export default function MarketApp({ data, pageName = "index", content = [] }) {
           </button>
         </aside>
       )}
-      <nav className="yv-workspace-nav" aria-label="Vues YAVIYA">
-        <span>Votre espace</span>
-        {[
-          ["buyer", "Acheteur"],
-          ["seller", "Vendeur"],
-          ["courier", "Livreur"],
-          ["admin", "Admin"],
-        ].map(([role, label]) => (
-          <button
-            key={role}
-            aria-pressed={screen?.role === role}
-            onClick={() => setScreen({ type: "workspace-intro", role })}
-          >
-            Vue {label}
-          </button>
-        ))}
-      </nav>
       <main>
         {["index", "congo"].includes(pageName) ? (
           <>
@@ -1684,5 +1685,6 @@ export default function MarketApp({ data, pageName = "index", content = [] }) {
         </Modal>
       )}
     </div>
+    </>
   );
 }
