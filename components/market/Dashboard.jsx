@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { api, amount, imageUrl } from "../../lib/market/api";
 import Orders from "./Orders";
+import VerificationReview from "./VerificationReview";
 import {
   WorkspaceOverview,
   WorkspaceFinance,
@@ -317,95 +318,6 @@ function DirectMessages({ country, role }) {
           {error}
         </p>
       )}
-    </section>
-  );
-}
-function VerificationReview({ country, onRefresh }) {
-  const [rows, setRows] = useState([]),
-    [error, setError] = useState(""),
-    [busy, setBusy] = useState(false);
-  useEffect(() => {
-    api("/api/verification/reviews", { country })
-      .then(setRows)
-      .catch((e) => setError(e.message));
-  }, [country]);
-  async function decide(e, userId) {
-    e.preventDefault();
-    setBusy(true);
-    setError("");
-    const d = Object.fromEntries(new FormData(e.currentTarget));
-    try {
-      await api("/api/verification/reviews", {
-        country,
-        body: {
-          userId,
-          decision: d.decision,
-          note: d.note,
-          identityChecked: d.identityChecked === "on",
-          companyChecked: d.companyChecked === "on",
-        },
-      });
-      setRows(await api("/api/verification/reviews", { country }));
-      await onRefresh();
-    } catch (e) {
-      setError(e.message);
-    } finally {
-      setBusy(false);
-    }
-  }
-  return (
-    <section>
-      <h3>Dossiers à vérifier</h3>
-      {rows.map((r) => (
-        <article key={r.userId} className="yv-order">
-          <h4>
-            {r.name} · {r.publicId}
-          </h4>
-          <p>
-            {r.kind} · {r.companyName} · {r.status} · Pays du document :{" "}
-            {r.issuingCountry}
-          </p>
-          <a
-            target="_blank"
-            rel="noreferrer"
-            href={
-              "/api/verification/document?userId=" +
-              encodeURIComponent(r.userId) +
-              "&country=" +
-              country
-            }
-          >
-            Consulter la pièce privée
-          </a>
-          {r.status === "pending" && (
-            <form className="yv-form" onSubmit={(e) => decide(e, r.userId)}>
-              <label className="yv-check">
-                <input name="identityChecked" type="checkbox" />
-                Document vérifié manuellement
-              </label>
-              {r.kind === "seller" && (
-                <label className="yv-check">
-                  <input name="companyChecked" type="checkbox" />
-                  Informations de boutique vérifiées
-                </label>
-              )}
-              <label>
-                Décision
-                <select name="decision">
-                  <option value="approve">Approuver</option>
-                  <option value="reject">Rejeter</option>
-                </select>
-              </label>
-              <label>
-                Motif / note
-                <textarea name="note" maxLength={500} />
-              </label>
-              <button disabled={busy}>Enregistrer la décision</button>
-            </form>
-          )}
-        </article>
-      ))}
-      {error && <p role="alert">{error}</p>}
     </section>
   );
 }
@@ -740,7 +652,7 @@ export default function Dashboard({
             <AdminCourierMessages country={country} />
           )}
           {tab === "verification" && (
-            <VerificationReview country={country} onRefresh={onRefresh} />
+            <VerificationReview country={country} config={config} onRefresh={onRefresh} />
           )}
           {error && (
             <p role="alert" className="yv-error">

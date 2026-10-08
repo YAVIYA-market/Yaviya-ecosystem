@@ -26,7 +26,7 @@ const fixtureCall = (endpoint, cookie, body) =>
     }),
   );
 const accounts = {};
-for (const role of ["buyer", "seller", "courier", "admin"]) {
+for (const role of ["buyer", "seller", "courier", "admin", "pendingSeller"]) {
   const response = await fixtureCall("/api/auth/signup", "", {
     login: role + "@workspace.example.test",
     password: "Workspace-test-password-2026!",
@@ -41,7 +41,7 @@ for (const role of ["buyer", "seller", "courier", "admin"]) {
     phone: "+243999999999",
     email: "",
     address: "Adresse fictive",
-    accountType: role === "admin" ? "buyer" : role,
+    accountType: ["admin", "pendingSeller"].includes(role) ? "buyer" : role,
     privacyConsent: true,
     privacyVersion: "2026-10-02",
   });
@@ -73,6 +73,8 @@ for (const role of ["buyer", "seller", "courier", "admin"]) {
       )
       .bind(user.id)
       .run();
+  if (role === "pendingSeller")
+    await db.prepare("INSERT INTO identity_checks(user_id,kind,company_name,unregistered,seller_plan,document_type,object_key,file_name,status,issuing_country,document_mime,submitted_at) VALUES (?,'seller','Atelier Kivu · démo',1,'free','identity','fixture','piece-test.jpg','pending','CD','image/jpeg',?)").bind(user.id, Date.now()).run();
 }
 const opportunityOrder = {
   id: "YV-WORKSPACE-MISSION",
@@ -325,12 +327,26 @@ try {
       );
       click("Vérifications");
       await until(
-        () =>
-          document
-            .querySelector(".yv-dashboard")
-            ?.textContent.includes("Vérification"),
+        () => document.querySelector(".yv-review-card"),
         "contrôle identité",
       );
+      const review = document.querySelector(".yv-review-card");
+      const approve = review.querySelector('button[type="submit"], .yv-primary');
+      assert.equal(approve.disabled, true, "validation bloquée avant les contrôles manuels");
+      const decision = review.querySelector('[name="decision"]');
+      decision.value = "reject";
+      decision.dispatchEvent(new dom.window.Event("change", { bubbles: true }));
+      await until(() => review.querySelector('[name="note"]').required, "motif obligatoire pour un refus");
+      decision.value = "approve";
+      decision.dispatchEvent(new dom.window.Event("change", { bubbles: true }));
+      review.querySelector('[name="identityChecked"]').click();
+      review.querySelector('[name="companyChecked"]').click();
+      await until(() => !approve.disabled, "contrôles complets autorisent la décision");
+      approve.click();
+      await until(() => document.querySelector('[role="status"]')?.textContent.includes("Dossier validé"), "décision de validation enregistrée");
+      const reviewed = await fetch(root + "/api/verification/reviews", { headers: { Cookie: accounts.admin.cookie } });
+      assert.equal(reviewed.status, 200);
+      assert.equal((await reviewed.json()).find((r) => r.userId === accounts.pendingSeller.id).status, "approved");
       click("Boutiques");
       await until(
         () =>

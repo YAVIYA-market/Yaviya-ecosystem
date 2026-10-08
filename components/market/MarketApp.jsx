@@ -187,7 +187,7 @@ function ProductDetail({
           )}
           <div className="yv-actions">
             <button
-              className="yv-primary"
+              className="yv-primary yv-buy-now"
               disabled={product.stock < 1}
               onClick={() => onBuy(product)}
             >
@@ -1110,7 +1110,7 @@ export default function MarketApp({ data, pageName = "index", content = [] }) {
                         </small>
                       )}
                       <button
-                        className="yv-primary"
+                        className="yv-primary yv-buy-now"
                         disabled={busy || p.stock < 1}
                         onClick={() => purchase([{ id: p.id, q: 1 }])}
                       >
@@ -1669,7 +1669,7 @@ export default function MarketApp({ data, pageName = "index", content = [] }) {
                       Voir les détails
                     </button>
                     <button
-                      className="yv-primary"
+                      className="yv-primary yv-buy-now"
                       onClick={() => purchase([{ id: p.id, q: 1 }])}
                     >
                       Acheter maintenant

@@ -88,18 +88,15 @@ export default function AuthForm({ country, onSuccess, initialAction = "login", 
         <>
           {action === "signup" && (
             <>
-              <label>
-                Type de compte
-                <select
-                  aria-label="Type de compte"
-                  value={registrationRole}
-                  onChange={(e) => setRegistrationRole(e.target.value)}
-                >
-                  <option value="buyer">Acheteur</option>
-                  <option value="seller">Vendeur</option>
-                  <option value="courier">Livreur</option>
-                </select>
-              </label>
+              <fieldset className="yv-account-choices">
+                <legend>Type de compte</legend>
+                {[["buyer", "Acheteur", "Acheter et suivre mes commandes"], ["seller", "Vendeur", "Ouvrir et gérer ma boutique"], ["courier", "Livreur", "Livrer et suivre mes missions"]].map(([value, label, description]) => (
+                  <label key={value} className={registrationRole === value ? "selected" : ""}>
+                    <input type="radio" name="registrationRole" value={value} checked={registrationRole === value} onChange={() => setRegistrationRole(value)} />
+                    <span><strong>{label}</strong><small>{description}</small></span>
+                  </label>
+                ))}
+              </fieldset>
               {registrationRole === "seller" && (
                 <p>Créez votre boutique en quatre étapes. Votre identité et votre adresse seront vérifiées par YAVIYA avant l’activation. Vous pouvez déclarer une activité sans numéro RCCM.</p>
               )}

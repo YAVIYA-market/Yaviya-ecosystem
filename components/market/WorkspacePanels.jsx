@@ -33,12 +33,8 @@ export function WorkspaceOverview({ state, role, country, onTab }) {
           ["Produits de mon périmètre", catalogue.length],
         ];
   return (
-    <section>
-      <h3>Vue d’ensemble</h3>
-      <p>
-        Les données ci-dessous proviennent des commandes et du catalogue
-        accessibles à votre compte.
-      </p>
+    <section className="yv-workspace-overview">
+      <div className="yv-section-heading"><div><h3>Vue d’ensemble</h3><p>{role === "courier" ? "Votre journée de livraison commence ici." : role === "seller" ? "Les repères essentiels pour gérer votre boutique." : "L’activité de votre marché en un coup d’œil."}</p></div><span className="yv-workspace-market">{country === "CG" ? "République du Congo" : "RD Congo"}</span></div>
       <div className="yv-stat-grid">
         {metrics.map(([label, value]) => (
           <p key={label}>
@@ -47,13 +43,19 @@ export function WorkspaceOverview({ state, role, country, onTab }) {
           </p>
         ))}
       </div>
-      <div className="yv-info-grid">
+      <div className="yv-workspace-priority">
+        <div><span className="yv-eyebrow">VOTRE PRIORITÉ</span><h4>{role === "courier" ? state.opportunities.length ? "Des missions sont disponibles" : "Préparez votre prochaine mission" : pending.length ? "Des commandes attendent votre suivi" : "Votre activité est à jour"}</h4><p>{role === "courier" ? `${state.opportunities.length} mission(s) proposée(s) · ${pending.length} livraison(s) en cours.` : `${pending.length} commande(s) en cours à suivre avec vos clients.`}</p></div>
+        <button className="yv-primary" onClick={() => onTab("orders")}>{role === "courier" ? "Voir mes missions" : "Suivre mes commandes"}</button>
+      </div>
+      <div className="yv-info-grid yv-workspace-actions">
         <article>
-          <h4>À traiter</h4>
-          <p>{pending.length} commande(s) en cours.</p>
+          <span className="yv-action-number" aria-hidden="true">↗</span>
+          <h4>{role === "courier" ? "Mes livraisons" : "Mes commandes"}</h4>
+          <p>{role === "courier" ? "Retrouvez vos étapes, la preuve de livraison et le règlement de chaque mission." : "Consultez les articles, préparez les commandes et suivez leur progression."}</p>
           <button onClick={() => onTab("orders")}>Ouvrir les commandes</button>
         </article>
         <article>
+          <span className="yv-action-number" aria-hidden="true">▦</span>
           <h4>
             {role === "courier"
               ? "Disponibilité et règlement"
@@ -72,7 +74,9 @@ export function WorkspaceOverview({ state, role, country, onTab }) {
             Gérer mon activité
           </button>
         </article>
+        <article><span className="yv-action-number" aria-hidden="true">◎</span><h4>{role === "admin" ? "Validation des partenaires" : "Mon accompagnement"}</h4><p>{role === "admin" ? "Contrôlez les pièces et les informations des vendeurs et livreurs avant validation." : "Échangez avec YAVIYA pour le suivi de votre activité et de vos demandes."}</p><button onClick={() => onTab(role === "admin" ? "verification" : "messages")}>{role === "admin" ? "Vérifier les dossiers" : "Contacter YAVIYA"}</button></article>
       </div>
+      <div className="yv-workspace-recent"><div className="yv-heading"><h4>{role === "courier" ? "Dernières missions" : "Dernières commandes"}</h4><button onClick={() => onTab("orders")}>Tout voir</button></div>{orders.length ? <ul>{orders.slice().sort((a, b) => Number(b.createdAt) - Number(a.createdAt)).slice(0, 3).map((o) => <li key={o.id}><div><strong>{o.id}</strong><span>{o.city || ""}{o.commune ? " · " + o.commune : ""}</span></div><span className={"yv-review-status " + (o.cancelled ? "rejected" : o.buyerConfirmed ? "approved" : "pending")}>{o.cancelled ? "Annulée" : o.buyerConfirmed ? "Livrée" : "En cours"}</span><b>{amount(role === "courier" ? o.courierEarnings || 0 : o.total || 0, country)}</b></li>)}</ul> : <div className="yv-workspace-empty"><p>{role === "courier" ? "Vos missions acceptées apparaîtront ici." : "Votre prochaine commande apparaîtra ici dès sa création."}</p></div>}</div>
     </section>
   );
 }
