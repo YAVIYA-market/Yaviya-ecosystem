@@ -408,7 +408,7 @@ hr {
   text-align: left;
 }
 .yv-shop-link .yv-verified-badge {
-  color: #ea580c;
+  color: #c2410c;
 }
 .yv-price {
   font-size: 21px;
@@ -1905,7 +1905,7 @@ hr {
 }
 
 /* YAVIYA signature: orange Y monogram with a contrasting validation check. */
-.yv-verified-badge { color: #ea580c; gap: 7px; font-size: 12px; font-weight: 750; }
+.yv-verified-badge { color: #c2410c; gap: 7px; font-size: 12px; font-weight: 750; }
 .yv-verified-badge:has(> span) { padding: 5px 10px 5px 7px; border: 1px solid #fed7aa; background: #fff7ed; border-radius: 24px; }
 .yv-verified-badge > span { color: #9a3412; }
 .yv-verified-badge svg { width: 26px; height: 26px; }
