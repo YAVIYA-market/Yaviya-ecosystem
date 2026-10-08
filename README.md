@@ -61,7 +61,7 @@ Le projet GitHub doit être relié au projet Vercel `yaviyaecosystem`, avec la r
 | `components/market/`         | Interfaces React du catalogue, comptes et parcours métier                               |
 | `frontend/styles/`           | Styles responsive                                                                         |
 | `frontend/assets/images/`    | 34 images originales et 30 vues produits supplémentaires                                                           |
-| `api/handler.js`             | Fonction Vercel : conversion HTTP vers les gestionnaires existants                        |
+| `backend/http-handler.js`             | Adaptateur HTTP partagé, appelé par la route Next.js `pages/api/[[...route]].js`                        |
 | `backend/application.js`     | Session indépendante et identité injectée côté serveur                                    |
 | `backend/auth.js`            | Comptes, mots de passe scrypt, sessions serveur, déconnexion et limitation des tentatives |
 | `backend/database.js`        | Adaptation D1 vers PostgreSQL en production et SQLite pour le développement local          |

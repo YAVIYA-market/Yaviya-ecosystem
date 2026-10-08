@@ -13,7 +13,7 @@ Les routes `pages/index.jsx` et `pages/[sitePage].jsx` rendent `components/marke
 - `AccountSettings` : préférences et double authentification, codes de secours.
 - `InfoContent` : contenu existant des pages d'information sous forme d'éléments React.
 
-Le serveur reste `pages/api/[[...route]].js` → `api/handler.js` → `backend/application.js`. Les prix, stocks, droits d'accès et changements de commande sont validés côté serveur. `/api/catalogue` expose uniquement les produits approuvés visibles ; aucune identité ou commande n'est publique.
+Le serveur reste `pages/api/[[...route]].js` → `backend/http-handler.js` → `backend/application.js`. Les prix, stocks, droits d'accès et changements de commande sont validés côté serveur. `/api/catalogue` expose uniquement les produits approuvés visibles ; aucune identité ou commande n'est publique.
 
 ## Validation
 

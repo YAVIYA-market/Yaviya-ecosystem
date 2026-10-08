@@ -1,6 +1,6 @@
 # Organisation des API
 
-`api/handler.js` est le point d'entrée Vercel. `backend/application.js` identifie la session YAVIYA et remplace les en-têtes d'identité du client. Les gestionnaires de `backend/worker/` conservent les contrôles métier et l'isolation pays. Le paramètre `country=CG` sélectionne le marché Congo.
+`pages/api/[[...route]].js` est le point d’entrée Next.js pour `/api/*`. Il appelle l’adaptateur partagé `backend/http-handler.js`, placé hors du dossier racine `api` pour éviter une seconde fonction Vercel. `backend/application.js` identifie la session YAVIYA et remplace les en-têtes d'identité du client. Les gestionnaires de `backend/worker/` conservent les contrôles métier et l'isolation pays. Le paramètre `country=CG` sélectionne le marché Congo.
 
 | Routes                                                                 | Gestionnaire              | Responsabilité                                      |
 | ---------------------------------------------------------------------- | ------------------------- | --------------------------------------------------- |

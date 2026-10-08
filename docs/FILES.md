@@ -21,7 +21,7 @@ Les sources de la version complète sont classées par fonction. Les scripts fro
 | `YAVIYA-Frontend-v30.zip`                                | Archive préexistante conservée ; les fichiers de la nouvelle version sont désormais dépliés dans le dépôt. |
 | `YAVIYA-Projet-Complet-v30 (3).zip`                      | Archive préexistante conservée ; les fichiers de la nouvelle version sont désormais dépliés dans le dépôt. |
 | `YAVIYA-Projet-Complet-v30.zip`                          | Archive préexistante conservée ; les fichiers de la nouvelle version sont désormais dépliés dans le dépôt. |
-| `api/handler.js`                                         | Entrée HTTP Vercel et conversion vers Request/Response.                                                    |
+| `backend/http-handler.js`                                         | Adaptateur HTTP partagé ; seul `pages/api/[[...route]].js` est exposé par Next.js.                                                    |
 | `backend/application.js`                                 | Session indépendante et identité injectée côté serveur.                                                    |
 | `backend/auth.js`                                        | Comptes, mots de passe scrypt, sessions et limitation des tentatives.                                      |
 | `backend/database.js`                                    | Adaptation D1 à PostgreSQL/SQLite et fichiers privés en base.                                              |

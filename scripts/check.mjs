@@ -20,7 +20,7 @@ for (const directory of [
   "frontend/src",
   "backend",
   "backend/worker",
-  "api",
+  "pages/api",
   "scripts",
   "tests",
 ]) {

@@ -27,5 +27,5 @@ for (const folder of ["pages", "src", "styles", "assets/images"]) {
 console.log(
   "YAVIYA complet compilé : " +
     names.size +
-    " fichiers frontend ; API dans api/handler.js.",
+    " fichiers frontend ; API dans backend/http-handler.js.",
 );
