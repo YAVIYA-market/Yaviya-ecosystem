@@ -20,7 +20,7 @@ for (const directory of [
   "frontend/src",
   "backend",
   "backend/worker",
-  "api",
+  "pages/api",
   "scripts",
   "tests",
 ]) {
@@ -51,8 +51,8 @@ for (const page of [
 }
 assert.ok(html.includes("auth-independent.js"));
 assert.equal(
-  JSON.parse(await readFile("vercel.json", "utf8")).outputDirectory,
-  "dist",
+  JSON.parse(await readFile("vercel.json", "utf8")).framework,
+  "nextjs",
 );
 console.log(
   "Sources originales, fichiers référencés et configuration Vercel vérifiés.",

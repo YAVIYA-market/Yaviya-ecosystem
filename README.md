@@ -1,5 +1,15 @@
 # YAVIYA — nouvelle version complète (1.9.0)
 
+## Migration Next.js
+
+Next.js 16 et React 19 exécutent désormais les pages de la marketplace. `components/market/` contient les composants du catalogue, du compte, des inscriptions, du checkout, des commandes et des espaces professionnels. Les anciennes pages HTML et leurs scripts restent uniquement comme référence et pour `npm run dev:legacy` ; ils ne sont plus chargés par les pages Next.js. Les liens historiques `.html` restent disponibles.
+
+Le build génère les assets publics puis compile Next.js. Les pièces d'identité, preuves de livraison et secrets ne sont jamais copiés dans les assets. La page de confidentialité conserve son contenu existant, rendu sous forme d'éléments React.
+
+La reprise des fonctions précédentes est documentée dans [FEATURE_PARITY.md](docs/FEATURE_PARITY.md).
+
+Validation : `npm test`, `npm run build`, puis `npm run test:next`. Ce dernier démarre le serveur compilé avec une base SQLite isolée et teste la vraie chaîne HTTP → React → API → commande → suivi. Les contrôles de production PostgreSQL restent nécessaires après déploiement. L'interface de démonstration ne remplace pas l'activation des prestataires de paiement ni la configuration du propriétaire administrateur.
+
 Version 1.9.0 : adaptateur PostgreSQL activable sur Vercel, schéma d’exécution privé et rôle Supabase à privilèges minimaux. SQLite reste disponible uniquement pour le développement et les tests locaux.
 
 Version 1.7.0 : [12 catégories, coupons et préférences de profil](docs/PROFILE_CATEGORIES_COUPONS.md). La devise préférée ne convertit pas les prix.
@@ -23,7 +33,7 @@ npm ci
 npm run dev
 ```
 
-Ouvrir http://127.0.0.1:3000. Les migrations sont appliquées automatiquement au démarrage local. La base SQLite se trouve dans `.local/`, exclue de Git. La connexion utilise un e-mail ou un téléphone et un mot de passe de 12 à 128 caractères. Le profil conserve son formulaire d'origine et ses identifiants YVC/YVYS/YVYC.
+Ouvrir http://127.0.0.1:3000. Les migrations sont appliquées automatiquement au démarrage local. La base SQLite se trouve dans `.local/`, exclue de Git. La connexion utilise un e-mail ou un téléphone et un mot de passe de 8 à 128 caractères, avec majuscule, minuscule, chiffre et caractère spécial. Le profil conserve son formulaire d'origine et ses identifiants YVC/YVYS/YVYC.
 
 ```bash
 npm test
@@ -33,7 +43,7 @@ npm start
 
 ## Activer l'installation Vercel
 
-Le projet GitHub doit être relié au projet Vercel `yaviyaecosystem`, avec la racine du dépôt comme Root Directory. `vercel.json` configure `npm run build`, le dossier `dist` et la fonction API indépendante. Utiliser Node.js 24.
+Le projet GitHub doit être relié au projet Vercel `yaviyaecosystem`, avec la racine du dépôt comme Root Directory. `vercel.json` configure `npm run build` et le framework Next.js. L'API utilise `pages/api/[[...route]].js`. Utiliser Node.js 24 et supprimer toute ancienne surcharge du dossier de sortie `dist` dans les paramètres Vercel.
 
 1. Utiliser le projet Supabase `yaviya-production` et sa connexion **Transaction pooler** sur le port 6543.
 2. Ajouter `POSTGRES_URL` comme Secret Vercel côté serveur. La valeur utilise le rôle limité `yaviya_runtime` et ne doit jamais être préfixée par `NEXT_PUBLIC_`.
@@ -47,11 +57,11 @@ Le projet GitHub doit être relié au projet Vercel `yaviyaecosystem`, avec la r
 
 | Emplacement                  | Rôle                                                                                      |
 | ---------------------------- | ----------------------------------------------------------------------------------------- |
-| `frontend/pages/`            | Cinq pages HTML, dont les portails RDC et Congo                                           |
-| `frontend/src/`              | Scripts classiques du catalogue, comptes et parcours métier                               |
+| `pages/`                     | Routes Next.js, documents et API                                           |
+| `components/market/`         | Interfaces React du catalogue, comptes et parcours métier                               |
 | `frontend/styles/`           | Styles responsive                                                                         |
 | `frontend/assets/images/`    | 34 images originales et 30 vues produits supplémentaires                                                           |
-| `api/handler.js`             | Fonction Vercel : conversion HTTP vers les gestionnaires existants                        |
+| `backend/http-handler.js`             | Adaptateur HTTP partagé, appelé par la route Next.js `pages/api/[[...route]].js`                        |
 | `backend/application.js`     | Session indépendante et identité injectée côté serveur                                    |
 | `backend/auth.js`            | Comptes, mots de passe scrypt, sessions serveur, déconnexion et limitation des tentatives |
 | `backend/database.js`        | Adaptation D1 vers PostgreSQL en production et SQLite pour le développement local          |
@@ -91,3 +101,21 @@ Dans **Profil → Paramètres → Sécurité du compte**, l’option 2FA permet 
 « Besoin d’aide » ouvre le chatbot, également depuis chaque fiche produit. Les cartes et fiches présentent le nombre de comptes acheteurs ayant confirmé la réception ; les annulations sont exclues. Les statistiques vendeur montrent les visiteurs distincts et les achats de ses boutiques ; l’admin centralise les deux marchés, avec filtres par période et boutique. Les données sont enregistrées sur le serveur, sans exemples chiffrés dans ce nouvel onglet. Voir [les endpoints et définitions](docs/API.md#statistiques-produits-140).
 
 Avant l’activation sur l’hébergement : configurer la base persistante puis appliquer les migrations, notamment `0015_product_insights.sql`, avec `npm run db:migrate`. Tant que le service serveur est indisponible, les compteurs l’indiquent au lieu d’afficher zéro.
+
+## Application unique et recette par rôle — 9 octobre 2026
+
+Le [rapport d’audit](docs/UNIFIED_APP_AUDIT_20261009.md) distingue les parcours persistants, les démonstrations et les integrations non activées. La branche `migration/nextjs` contient les mises à jour web, mobile et backend. `/admin` ouvre le portail administrateur sécurisé.
+
+Recette locale isolée, sans connecter une base de production :
+
+```bash
+npm ci
+npm run demo:setup
+npm run demo:web
+```
+
+Ouvrir `http://localhost:3000`. Comptes de recette : `buyer@yaviya.example.test`, `particular@yaviya.example.test`, `seller@yaviya.example.test`, `courier@yaviya.example.test`, `admin@yaviya.example.test`. Mot de passe de recette uniquement : `Yaviya-demo-2026!`. La clé MFA locale est générée dans un fichier ignoré par Git ; aucune clé de production n’est nécessaire. Les identités prévalidées sont des fixtures locales, pas des validations KYC réelles. Ne jamais importer cette base en production.
+
+Les nouvelles fonctions sont dans Profil → outils YAVIYA et dans les espaces professionnels → Retours, règlements et service client. La revente particulière est distincte de la boutique et affiche son consentement à la commission de 12 %. Le mobile réutilise les mêmes API.
+
+Avant déploiement de cette version sur un backend PostgreSQL, appliquer `supabase/migrations/20261009170046_unified_market.sql`. Aucun paiement électronique n’est activé par cette migration. Les paramètres Expo / backend HTTPS et les clés de signature restent nécessaires pour un APK signé.

@@ -1,3 +1,6 @@
+import { publicCampaigns } from './admin-content.js';
+import { approvedRole } from './account-roles.js';
+import { settlementStatements } from './finance.js';
 import { normalizeCategory } from "./product-categories.js";
 import { approvedIdentity } from "./identity-complete.js";
 import marketConfig from "../data/market-config.json" with { type: "json" };
@@ -43,14 +46,9 @@ export async function marketContext(env, user) {
     .bind(user)
     .first();
   const isAdmin = admin?.user_id === base,
-    approved =
-      check?.status === "approved" &&
-      check.kind === profile?.account_type &&
-      ["image/jpeg", "image/png"].includes(check.document_mime) &&
-      marketConfig.identityCountries.some(
-        (c) => c.code === check.issuing_country,
-      ) &&
-      (check.document_type !== "licence-c" || check.kind === "courier");
+    sellerApproved = await approvedRole(env, user, 'seller'),
+    courierApproved = await approvedRole(env, user, 'courier');
+  const personal = await env.DB.prepare('SELECT seller_id FROM personal_sellers WHERE user_id=? AND country=?').bind(user,country).first();
   const stores = (
     await env.DB.prepare(
       "SELECT id,name,country FROM owned_stores WHERE user_id=? AND country=?",
@@ -60,10 +58,11 @@ export async function marketContext(env, user) {
   ).results;
   const seedStores = country === "CG" ? seedShopsCG : seedShops;
   const sellerIds = [
-    ...(approved && profile.account_type === "seller"
+    ...(sellerApproved
       ? stores.map((s) => s.id + 10000)
       : []),
     ...(isAdmin ? seedStores.map((s) => s.id) : []),
+    ...(personal ? [personal.seller_id] : []),
   ];
   return {
     user,
@@ -73,7 +72,9 @@ export async function marketContext(env, user) {
     check,
     stores,
     sellerIds,
-    courier: approved && profile.account_type === "courier",
+    courier: courierApproved,
+    professionalSeller: sellerApproved,
+    personalSellerId: personal?.seller_id || null,
     owner: admin?.user_id,
   };
 }
@@ -203,11 +204,12 @@ function serializeOrder(order) {
   return { ...order, paymentState: paymentLabel(order), shared: true };
 }
 async function state(env, ctx, view) {
-  if (!["buyer", "seller", "courier", "admin"].includes(view))
+  if (!["buyer", "particular", "seller", "courier", "admin"].includes(view))
     fail("Vue inconnue");
   if (
     (view === "admin" && !ctx.isAdmin) ||
-    (view === "seller" && !ctx.sellerIds.length) ||
+    (view === "seller" && !ctx.professionalSeller && !ctx.isAdmin) ||
+    (view === "particular" && !ctx.personalSellerId) ||
     (view === "courier" && !ctx.courier)
   )
     fail("Accès à cet espace non autorisé", 403);
@@ -224,21 +226,15 @@ async function state(env, ctx, view) {
         ctx.sellerIds.includes(p.seller) ||
         ctx.isAdmin,
     );
-  const stores = (
-    await env.DB.prepare(
-      "SELECT s.id,s.name,s.country,i.status,i.kind,i.document_type,i.document_mime,i.issuing_country FROM owned_stores s JOIN identity_checks i ON i.user_id=s.user_id WHERE s.country=? AND i.status=?",
-    )
-      .bind(ctx.country, "approved")
-      .all()
-  ).results
-    .filter((row) => approvedIdentity(row, "seller"))
-    .map(({ id, name, country, status }) => ({ id, name, country, status }));
+  const storeRows=(await env.DB.prepare('SELECT id,name,country,user_id,address FROM owned_stores WHERE country=?').bind(ctx.country).all()).results;
+  const stores=[];
+  for(const row of storeRows) if(await approvedRole(env,row.user_id,'seller')) stores.push({id:row.id,name:row.name,country:row.country,address:row.address,status:'approved'});
   let ordersQuery = "SELECT DISTINCT o.* FROM market_orders o";
   let args = [];
   if (view !== "admin") {
     ordersQuery +=
       " JOIN market_participants p ON p.order_id=o.id WHERE o.country=? AND p.user_id=? AND p.role=?";
-    args = [ctx.country, ctx.user, view];
+    args = [ctx.country, ctx.user, view === "particular" ? "seller" : view];
   } else {
     ordersQuery += " WHERE o.country=?";
     args = [ctx.country];
@@ -251,6 +247,11 @@ async function state(env, ctx, view) {
   ).results.map((row) =>
     serializeOrder({ ...JSON.parse(row.snapshot), revision: row.revision }),
   );
+  const returnRows=(await env.DB.prepare('SELECT order_id,status FROM return_requests WHERE country=?').bind(ctx.country).all()).results;
+  for(const order of orders) {
+    order.returnStatus=returnRows.find(r=>r.order_id===order.id)?.status || null;
+    if(order.returnStatus==='refunded_manual') order.paymentState='Remboursement externe déclaré';
+  }
   const settings = await env.DB.prepare(
     "SELECT * FROM market_couriers WHERE user_id=?",
   )
@@ -316,24 +317,28 @@ async function state(env, ctx, view) {
       }
     : null;
   return {
+    campaigns: await publicCampaigns(env,ctx.country),
     userId: ctx.user,
     profile,
     view,
     roles: {
       buyer: true,
-      seller: ctx.sellerIds.length > 0,
+      seller: ctx.professionalSeller || ctx.isAdmin,
+      particular: !!ctx.personalSellerId,
       courier: ctx.courier,
       admin: ctx.isAdmin,
     },
-    sellerIds: ctx.sellerIds,
-    catalogue,
+    sellerIds: view === "particular" ? [ctx.personalSellerId] : ctx.sellerIds.filter(id => id !== ctx.personalSellerId),
+    personalSellerId: ctx.personalSellerId,
+    catalogue: view === "particular" ? catalogue.filter(p => p.seller === ctx.personalSellerId) : view === "seller" ? catalogue.filter(p => ctx.sellerIds.includes(p.seller) && p.seller !== ctx.personalSellerId) : catalogue,
     stores: stores.map((s) => ({
       id: s.id + 10000,
       name: s.name,
       country: s.country,
+      address: s.address,
       reviewed: true,
     })),
-    orders,
+    orders: view === "particular" ? orders.filter(o => o.items.some(i => i.seller === ctx.personalSellerId)) : view === "seller" ? orders.filter(o => o.items.some(i => ctx.sellerIds.includes(i.seller) && i.seller !== ctx.personalSellerId)) : orders,
     opportunities,
     couriers,
     courierSettings: settings,
@@ -394,7 +399,7 @@ function validateProduct(p) {
   )
     fail("Galerie invalide");
 }
-async function saveProduct(env, ctx, p) {
+export async function saveProduct(env, ctx, p) {
   validateProduct(p);
   const key = ctx.country + ":" + p.id,
     row = await env.DB.prepare("SELECT * FROM market_products WHERE key=?")
@@ -418,6 +423,12 @@ async function saveProduct(env, ctx, p) {
   if (!row && !ctx.isAdmin && p.approved) fail("Validation admin requise", 403);
   if (!(await validatePhotoReferences(env, row?.owner_user_id || ctx.user, p)))
     fail("Photo rattachée à un autre produit", 403);
+  const personal = p.seller === ctx.personalSellerId || (row && JSON.parse(row.data).sellerKind === 'particular');
+  if (personal && (p.stock > 1 || !['new','used'].includes(p.condition || JSON.parse(row?.data || '{}').condition))) fail('Une annonce personnelle représente un seul article, neuf ou d’occasion.');
+  if (personal && !row) {
+    const count = await env.DB.prepare('SELECT COUNT(*) AS n FROM market_products WHERE owner_user_id=? AND seller_id=?').bind(ctx.user,p.seller).first();
+    if (count.n >= 10) fail('La revente occasionnelle est limitée à 10 annonces. Contactez-nous pour une boutique professionnelle.',409);
+  }
   const data = {
     ...(row ? JSON.parse(row.data) : {}),
     ...Object.fromEntries(
@@ -433,6 +444,8 @@ async function saveProduct(env, ctx, p) {
         "desc",
       ].map((key) => [key, p[key]]),
     ),
+    sellerKind: personal ? 'particular' : 'professional',
+    condition: personal ? (p.condition || JSON.parse(row?.data || '{}').condition) : undefined,
     subcategory: p.subcategory || "",
     title: p.title.trim(),
     approved: ctx.isAdmin ? p.approved : false,
@@ -558,6 +571,16 @@ async function createOrder(env, ctx, d) {
       fail("Un article est indisponible. Vérifiez votre panier.", 409);
     rows.push({ row, p, q: item.q });
   }
+  if (rows.some(r => r.row.owner_user_id === ctx.user)) fail('Vous ne pouvez pas acheter votre propre article.',409);
+  const professionalPolicy = await env.DB.prepare('SELECT value FROM commerce_settings WHERE key=?').bind('professionalCommissionBps').first();
+  const sellerTerms = [...new Set(rows.map(r => r.p.seller))].map(sellerId => {
+    const selected = rows.filter(r => r.p.seller === sellerId);
+    const gross = selected.reduce((n,r) => n + r.p.price * r.q,0);
+    const personal = selected[0].p.sellerKind === 'particular';
+    const basisPoints = personal ? 1200 : Number(professionalPolicy?.value || 0);
+    const commission = Math.round(gross * basisPoints / 10000);
+    return {sellerId,userId:selected[0].row.owner_user_id,kind:personal?'particular':'professional',basisPoints,gross,commission,net:gross-commission,policyConfirmed:personal || !!professionalPolicy};
+  });
   const sellerIds = [...new Set(rows.map((r) => r.p.seller))],
     mode = d.delivery?.mode,
     fee = deliveryFee(ctx.country, mode, d.city, d.commune, sellerIds.length);
@@ -605,6 +628,7 @@ async function createOrder(env, ctx, d) {
       fee,
       relay: mode === "relay" ? "Relais à confirmer" : null,
     },
+    sellerTerms,
     sellerSteps: Object.fromEntries(sellerIds.map((id) => [id, 0])),
     sellerAccepted: Object.fromEntries(sellerIds.map((id) => [id, false])),
     sellerCashConfirmed: Object.fromEntries(sellerIds.map((id) => [id, false])),
@@ -741,6 +765,7 @@ async function mutateOrder(env, ctx, d, photo) {
       o.sellerSteps[seller] = 3;
       o.sellerCashConfirmed[seller] = d.cashCollected === true;
       o.step = Math.min(...Object.values(o.sellerSteps));
+      if (o.step === 3) o.deliveredAt = Date.now();
       label = "Remise confirmée par le vendeur";
     }
   } else if (d.action === "courier_claim") {
@@ -771,6 +796,7 @@ async function mutateOrder(env, ctx, d, photo) {
     if (o.courierStatus !== "collected" || !photo)
       fail("Récupérez le colis et ajoutez la photo de livraison", 409);
     o.deliveryProof = photo;
+    o.deliveredAt = Date.now();
     o.courierStatus = "delivered";
     o.step = 3;
     o.cashCourierConfirmed = d.cashCollected === true;
@@ -781,6 +807,7 @@ async function mutateOrder(env, ctx, d, photo) {
       fail("Seul l’acheteur confirme la réception", 403);
     if (o.step !== 3 || o.buyerConfirmed) fail("Réception non disponible", 409);
     o.buyerConfirmed = true;
+    o.receivedAt = Date.now();
     o.cashBuyerConfirmed = d.cashPaid === true;
     label = "Réception confirmée par l’acheteur";
   } else if (d.action === "cash_confirm") {
@@ -802,6 +829,8 @@ async function mutateOrder(env, ctx, d, photo) {
     label = "Frais de mission enregistrés";
   } else if (d.action === "courier_payout") {
     if (!ctx.isAdmin) fail("Administration uniquement", 403);
+    const remittance = await env.DB.prepare('SELECT order_id FROM cash_remittances WHERE order_id=?').bind(o.id).first();
+    if (!remittance) fail('Enregistrez d’abord la remise des espèces réellement reçues dans Finance.',409);
     if (o.courierPayout.status !== "due" || !o.courierUserId)
       fail(
         "La livraison, la réception et le paiement doivent être confirmés",
@@ -856,6 +885,7 @@ async function mutateOrder(env, ctx, d, photo) {
           "UPDATE market_products SET stock=stock+?,revision=revision+1 WHERE key=? AND EXISTS (SELECT 1 FROM market_orders WHERE id=? AND json_extract(snapshot,?)=?)",
         ).bind(i.q, ctx.country + ":" + i.id, o.id, "$.mutationToken", token),
       );
+  statements.push(...settlementStatements(env,ctx,o,token));
   const result = await env.DB.batch(statements);
   if (!result[0].meta.changes) fail("La commande a changé. Rechargez.", 409);
   return { order: serializeOrder({ ...o, revision: revision + 1 }) };
@@ -929,7 +959,7 @@ export async function handleMarketplace(request, env) {
       if (request.method === "GET") {
         const messages = (
           await env.DB.prepare(
-            "SELECT m.id,m.sender_role AS senderRole,m.message,m.created_at AS createdAt,c.name AS senderName FROM market_messages m LEFT JOIN customers c ON c.user_id=m.sender_user_id WHERE m.order_id=? ORDER BY m.created_at DESC,m.rowid DESC LIMIT 100",
+            "SELECT m.id,m.sender_role AS senderRole,m.message,m.created_at AS createdAt,c.name AS senderName FROM market_messages m LEFT JOIN customers c ON c.user_id=m.sender_user_id WHERE m.order_id=? ORDER BY m.created_at DESC,m.id DESC LIMIT 100",
           )
             .bind(orderId)
             .all()

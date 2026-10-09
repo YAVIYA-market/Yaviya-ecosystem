@@ -82,7 +82,10 @@ function add(id) {
   toast("Produit ajouté au panier de démonstration");
 }
 function updateCount() {
-  $("#count").textContent = [...cart.values()].reduce((a, b) => a + b, 0);
+  const quantity = [...cart.values()].reduce((total, value) => total + value, 0);
+  const counter = $("#count");
+  counter.textContent = quantity > 0 ? String(quantity) : "";
+  counter.hidden = quantity <= 0;
 }
 function showCart() {
   let rows = [...cart]

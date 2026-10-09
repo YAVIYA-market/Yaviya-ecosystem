@@ -1,3 +1,4 @@
+import { approvedRole, preserveLegacyRoles } from './account-roles.js';
 import { approvedIdentity } from "./identity-complete.js";
 import marketConfig from "../data/market-config.json" with { type: "json" };
 import { accountIdentifiers } from "./account-identifiers.js";
@@ -42,6 +43,12 @@ export async function handleVerification(request, env) {
           const ids = await accountIdentifiers(env, row.userId, row.kind);
           rows.push({ ...row, publicId: ids.accountId });
         }
+        const archives=(await env.DB.prepare('SELECT r.user_id,r.role,r.status,r.verification,c.name,c.phone FROM account_roles r JOIN customers c ON c.user_id=r.user_id').all()).results;
+        for(const archive of archives) {
+          if(rows.some(row=>row.userId===archive.user_id && row.kind===archive.role)) continue;
+          const check=JSON.parse(archive.verification),ids=await accountIdentifiers(env,archive.user_id,archive.role);
+          rows.push({userId:archive.user_id,kind:archive.role,status:archive.status,companyName:check.company_name,companyRcm:check.company_rcm,unregistered:check.unregistered,sellerPlan:check.seller_plan,courierPlan:check.courier_plan,documentMime:check.document_mime,issuingCountry:check.issuing_country,documentType:check.document_type,fileName:check.file_name,submittedAt:check.submitted_at,note:check.note || '',name:archive.name,phone:archive.phone,publicId:ids.accountId});
+        }
         return json(rows);
       }
       if (request.method !== "POST")
@@ -82,27 +89,32 @@ export async function handleVerification(request, env) {
       const note = typeof d.note === "string" ? d.note.slice(0, 500) : "";
       const statements = [
         env.DB.prepare(
-          "UPDATE identity_checks SET status=?,note=?,reviewed_at=? WHERE user_id=? AND status=?",
+          "UPDATE identity_checks SET status=?,note=?,reviewed_at=? WHERE user_id=? AND status=? AND submitted_at=? AND object_key=?",
         ).bind(
           d.decision === "approve" ? "approved" : "rejected",
           note,
           Date.now(),
           d.userId,
           "pending",
+          check.submitted_at,
+          check.object_key,
         ),
       ];
       if (d.decision === "approve" && check.kind === "seller")
         statements.push(
           env.DB.prepare(
-            "INSERT INTO owned_stores (user_id,name,country) SELECT ?,?,? WHERE NOT EXISTS (SELECT 1 FROM owned_stores WHERE user_id=?)",
+            "INSERT INTO owned_stores (user_id,name,country,address) SELECT ?,?,?,? WHERE NOT EXISTS (SELECT 1 FROM owned_stores WHERE user_id=?)",
           ).bind(
             d.userId,
             check.company_name,
             d.userId.startsWith("cg:") ? "CG" : "CD",
+            check.activity_address || "",
             d.userId,
           ),
         );
-      await env.DB.batch(statements);
+      if (d.decision === 'approve') statements.push(env.DB.prepare('INSERT INTO account_roles(user_id,role,status,verification,updated_at) SELECT ?,?,?,?,? WHERE EXISTS (SELECT 1 FROM identity_checks WHERE user_id=? AND kind=? AND status=?) ON CONFLICT(user_id,role) DO UPDATE SET status=excluded.status,verification=excluded.verification,updated_at=excluded.updated_at').bind(d.userId,check.kind,'approved',JSON.stringify({...check,status:'approved'}),Date.now(),d.userId,check.kind,'approved'));
+      const result = await env.DB.batch(statements);
+      if (!result[0].meta.changes) return json({error:'Dossier déjà traité'},409);
       return json({ ok: true });
     }
     if (path === "/api/verification/document") {
@@ -111,11 +123,17 @@ export async function handleVerification(request, env) {
       const target = url.searchParams.get("userId") || user;
       if (target !== user && !isAdmin)
         return json({ error: "Access denied" }, 403);
-      const row = await env.DB.prepare(
-        "SELECT object_key FROM identity_checks WHERE user_id=?",
+      let row = await env.DB.prepare(
+        "SELECT object_key,kind FROM identity_checks WHERE user_id=?",
       )
         .bind(target)
         .first();
+      const kind=url.searchParams.get('kind');
+      if(kind && !['seller','courier'].includes(kind)) return json({error:'Rôle invalide'},400);
+      if(kind && row?.kind!==kind) {
+        const archive=await env.DB.prepare('SELECT verification FROM account_roles WHERE user_id=? AND role=?').bind(target,kind).first();
+        row=archive?JSON.parse(archive.verification):null;
+      }
       if (!row) return json({ error: "Not found" }, 404);
       const object = await env.IDENTITY_FILES.get(row.object_key);
       if (!object) return json({ error: "Not found" }, 404);
@@ -137,12 +155,12 @@ export async function handleVerification(request, env) {
         .bind(user)
         .first();
       const profile = await env.DB.prepare(
-        "SELECT account_type FROM customers WHERE user_id=?",
+        "SELECT account_type,address FROM customers WHERE user_id=?",
       )
         .bind(user)
         .first();
-      const activeCheck = check?.kind === profile?.account_type ? check : null;
-      const stores = approvedIdentity(activeCheck, profile?.account_type)
+      const activeCheck = check;
+      const stores = await approvedRole(env,user,"seller")
         ? (
             await env.DB.prepare(
               "SELECT id,name,country FROM owned_stores WHERE user_id=?",
@@ -156,14 +174,15 @@ export async function handleVerification(request, env) {
     if (request.method !== "POST")
       return json({ error: "Method not allowed" }, 405);
     const profile = await env.DB.prepare(
-      "SELECT account_type FROM customers WHERE user_id=?",
+      "SELECT account_type,address FROM customers WHERE user_id=?",
     )
       .bind(user)
       .first();
-    if (!profile || !["seller", "courier"].includes(profile.account_type))
+    if (!profile)
       return json({ error: "Create a seller or courier profile first" }, 403);
     const form = await request.formData(),
-      kind = profile.account_type,
+      kind = String(form.get("kind") || profile.account_type),
+      activityAddress = String(form.get("activityAddress") || profile.address || "").trim(),
       companyName = String(form.get("companyName") || "").trim(),
       companyRcm = String(form.get("companyRcm") || "").trim(),
       documentType = String(form.get("documentType") || ""),
@@ -172,6 +191,11 @@ export async function handleVerification(request, env) {
       unregistered = kind === "seller" && form.get("unregistered") === "true",
       sellerPlan = String(form.get("sellerPlan") || "free"),
       courierPlan = String(form.get("courierPlan") || "standard");
+    if (!['seller','courier'].includes(kind)) return json({error:'Choisissez vendeur ou livreur'},400);
+    await preserveLegacyRoles(env,user);
+    const grant = await env.DB.prepare('SELECT status FROM account_roles WHERE user_id=? AND role=?').bind(user,kind).first();
+    if (grant?.status === 'approved') return json({error:'Ce rôle est déjà approuvé. Contactez le support pour modifier votre identité.'},409);
+    if (!activityAddress || activityAddress.length > 250) return json({error:"Confirmez l’adresse de votre activité"},400);
     if (courierPlan !== "standard")
       return json({ error: "Choose a courier plan" }, 400);
     if (kind === "courier") {
@@ -212,6 +236,7 @@ export async function handleVerification(request, env) {
     )
       .bind(user)
       .first();
+    if (previous?.status === 'pending' && previous.kind !== kind) return json({error:'Attendez le traitement du dossier en cours avant de demander un autre rôle.'},409);
     const newFile = file && typeof file.arrayBuffer === "function" && file.size;
     if (
       (!newFile &&
@@ -300,7 +325,8 @@ export async function handleVerification(request, env) {
       if (newFile) await env.IDENTITY_FILES.delete(objectKey);
       throw e;
     }
-    if (newFile && previous?.object_key)
+    await env.DB.prepare('UPDATE identity_checks SET activity_address=? WHERE user_id=? AND status=?').bind(activityAddress,user,'pending').run();
+    if (newFile && previous?.object_key && previous.status !== "approved")
       try {
         await env.IDENTITY_FILES.delete(previous.object_key);
       } catch {}

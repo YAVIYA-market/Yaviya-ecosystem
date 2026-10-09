@@ -1,7 +1,7 @@
 import { createServer } from "node:http";
 import { readFile } from "node:fs/promises";
 import { extname, resolve, sep } from "node:path";
-import handler from "../api/handler.js";
+import handler from "../backend/http-handler.js";
 import { createDatabase } from "../backend/database.js";
 import { migrate } from "./migrate.mjs";
 const db = await createDatabase();

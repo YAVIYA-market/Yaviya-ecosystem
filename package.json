@@ -3,13 +3,17 @@
   "version": "1.9.0",
   "private": true,
   "scripts": {
-    "dev": "npm run build && node --env-file-if-exists=.env scripts/dev.mjs --dist",
-    "start": "node --env-file-if-exists=.env scripts/dev.mjs --dist",
-    "build": "node scripts/build.mjs",
+    "dev": "node --env-file-if-exists=.env scripts/migrate.mjs && node scripts/prepare-next.mjs && next dev --webpack",
+    "start": "next start",
+    "build": "node scripts/prepare-next.mjs && next build --webpack",
+    "dev:legacy": "node scripts/build.mjs && node --env-file-if-exists=.env scripts/dev.mjs --dist",
     "check": "node scripts/check.mjs",
     "test": "npm run check && node --test tests/*.test.mjs",
     "db:migrate": "node --env-file-if-exists=.env scripts/migrate.mjs",
-    "db:owner": "node --env-file-if-exists=.env scripts/create-owner.mjs"
+    "db:owner": "node --env-file-if-exists=.env scripts/create-owner.mjs",
+    "test:next": "node scripts/test-next.mjs && node scripts/test-next-workspaces.mjs",
+    "demo:setup": "node scripts/demo-unified.mjs",
+    "demo:web": "node --env-file=.local/yaviya-demo.env node_modules/next/dist/bin/next dev --webpack"
   },
   "type": "module",
   "engines": {
@@ -18,9 +22,12 @@
   "dependencies": {
     "@libsql/client": "^0.18.0",
     "jose": "^6.2.12",
+    "next": "16.4.0",
     "otpauth": "^9.5.2",
     "postgres": "3.4.9",
-    "qrcode": "^1.5.4"
+    "qrcode": "^1.5.4",
+    "react": "19.2.0",
+    "react-dom": "19.2.0"
   },
   "devDependencies": {
     "jsdom": "^30.1.2"

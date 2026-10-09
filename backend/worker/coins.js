@@ -58,7 +58,25 @@ export async function handleCoins(request, env) {
         d.amount > 100000000
       )
         return reply({ error: "Invalid demo order" }, 400);
-      delta = Math.floor(d.amount / 2000);
+      const row = await env.DB.prepare(
+        "SELECT snapshot FROM market_orders WHERE id=? AND buyer_user_id=?",
+      )
+        .bind(d.reference, userId)
+        .first();
+      const order = row ? JSON.parse(row.snapshot) : null;
+      if (!order || !order.buyerConfirmed || order.cancelled)
+        return reply(
+          {
+            error:
+              "Confirmez la réception de votre commande avant de gagner des coupons.",
+          },
+          409,
+        );
+      const receivedAmount = order.items.reduce(
+        (sum, item) => sum + item.price * item.q,
+        0,
+      );
+      delta = Math.floor(receivedAmount / 2000);
       reference = d.reference;
       id = userId + ":earn:" + d.reference;
     } else if (d.kind === "redeem") {

@@ -1,3 +1,4 @@
+import { approvedRole } from './account-roles.js';
 import { accountIdentifiers } from "./account-identifiers.js";
 const json = (v, status = 200) =>
   Response.json(v, { status, headers: { "Cache-Control": "no-store" } });
@@ -21,16 +22,17 @@ export async function handleCourierMessages(request, env) {
     )
       .bind(user)
       .first();
-    if (!isAdmin && profile?.account_type !== "courier")
-      return json({ error: "Courier or administrator access required" }, 403);
+    const grant = await env.DB.prepare('SELECT status FROM account_roles WHERE user_id=? AND role=?').bind(user,'courier').first();
+    const hasRole = grant ? grant.status === 'approved' : profile?.account_type === 'courier' || await approvedRole(env,user,'courier');
+    if (!isAdmin && !hasRole) return json({error:'Accès partenaire requis'},403);
     const threadQuery =
-      "SELECT c.user_id AS userId,c.name,i.company_name AS companyName,i.status FROM customers c LEFT JOIN identity_checks i ON i.user_id=c.user_id WHERE c.account_type=? AND " +
+      "SELECT c.user_id AS userId,c.name,i.company_name AS companyName,i.status FROM customers c LEFT JOIN identity_checks i ON i.user_id=c.user_id WHERE (c.account_type=? OR EXISTS (SELECT 1 FROM account_roles r WHERE r.user_id=c.user_id AND r.role='courier' AND r.status='approved')) AND " +
       (country === "CG"
         ? "c.user_id LIKE 'cg:%'"
         : "c.user_id NOT LIKE 'cg:%'") +
       " ORDER BY c.name LIMIT 200";
     const actingAdmin = isAdmin && url.searchParams.get("view") !== "courier";
-    if (!actingAdmin && profile?.account_type !== "courier")
+    if (!actingAdmin && !hasRole)
       return json({ error: "Create a courier account first" }, 403);
     const threads = actingAdmin
       ? (await env.DB.prepare(threadQuery).bind("courier").all()).results
@@ -52,7 +54,7 @@ export async function handleCourierMessages(request, env) {
         return json({ error: "Courier not found in this country" }, 404);
       const messages = (
         await env.DB.prepare(
-          "SELECT id,sender,message,created_at AS createdAt FROM courier_messages WHERE country=? AND courier_user_id=? ORDER BY created_at DESC,rowid DESC LIMIT 100",
+          "SELECT id,sender,message,created_at AS createdAt FROM courier_messages WHERE country=? AND courier_user_id=? ORDER BY created_at DESC,id DESC LIMIT 100",
         )
           .bind(country, target)
           .all()
@@ -79,7 +81,7 @@ export async function handleCourierMessages(request, env) {
     if (
       isAdmin &&
       d.asCourier === true &&
-      (target !== user || profile?.account_type !== "courier")
+      (target !== user || !hasRole)
     )
       return json(
         { error: "Only your own courier account may send as courier" },

@@ -1,5 +1,5 @@
-import { createDatabase } from "../backend/database.js";
-import { createApplication } from "../backend/application.js";
+import { createDatabase } from "./database.js";
+import { createApplication } from "./application.js";
 let application;
 async function getApplication() {
   if (!application)

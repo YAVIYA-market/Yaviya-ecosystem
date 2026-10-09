@@ -6,7 +6,7 @@ Douze catégories demandées, conservation des sous-catégories, coupons à la p
 
 Site original v31 avec ses 34 images, deux marchés et espaces acheteur, vendeur, livreur et administrateur.
 
-Fichiers concernés : frontend/ (site et photos originales), backend/worker/ (catalogue et métier), backend/database.js, backend/auth.js, backend/google-auth.js, frontend/auth-independent.js, frontend/profile-commerce.js, api/handler.js, database/migrations/, scripts/, tests/, package.json, package-lock.json, vercel.json, .env.example, README.md.
+Fichiers concernés : frontend/ (site et photos originales), backend/worker/ (catalogue et métier), backend/database.js, backend/auth.js, backend/google-auth.js, frontend/auth-independent.js, frontend/profile-commerce.js, backend/http-handler.js, database/migrations/, scripts/, tests/, package.json, package-lock.json, vercel.json, .env.example, README.md.
 
 Acheter maintenant : authentification indépendante, synchronisation explicite, sélection du seul produit et reprise après le formulaire client. Aucun compte ChatGPT requis. Le formulaire reste visible sans connexion ; son enregistrement demande un accès YAVIYA par formulaire ou Google.
 

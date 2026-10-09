@@ -1,0 +1,97 @@
+export type Role = "buyer" | "seller" | "courier" | "admin";
+export type Product = {
+  condition?: "new" | "used";
+  sellerKind?: "particular" | "professional";
+  id: number;
+  seller: number;
+  title: string;
+  category: string;
+  subcategory?: string;
+  price: number;
+  regularPrice?: number;
+  stock: number;
+  img: string;
+  images?: string[];
+  desc: string;
+  visible: boolean;
+  approved: boolean;
+  revision?: number;
+};
+export type Profile = {
+  name: string;
+  phone: string;
+  email: string;
+  address: string;
+  accountType: Exclude<Role, "admin">;
+  wishlist: number[];
+  residenceCountry?: string;
+  currency?: string;
+  preferredLanguage?: string;
+  customerNumber?: string;
+};
+export type Order = {
+  id: string;
+  revision: number;
+  items: (Product & { q: number })[];
+  city: string;
+  commune: string;
+  address: string;
+  recipient: { name: string; phone: string };
+  step: number;
+  cancelled: boolean;
+  buyerConfirmed: boolean;
+  requestedCourier: boolean;
+  courierUserId: string | null;
+  courierStatus: string;
+  courierName?: string;
+  paymentState: string;
+  delivery: { fee: number; mode: string };
+  total: number;
+  sellerAccepted: Record<string, boolean>;
+  sellerSteps: Record<string, number>;
+  courierEarnings: number;
+  courierNet: number;
+  courierExpenses: number;
+  courierPayout: { status: string };
+  events: string[];
+  returnStatus?: string | null;
+};
+export type MarketState = {
+  profile: Profile | null;
+  roles: Record<Role, boolean>;
+  sellerIds: number[];
+  personalSellerId?: number | null;
+  catalogue: Product[];
+  orders: Order[];
+  opportunities: {
+    id: string;
+    city: string;
+    commune: string;
+    fee: number;
+    earnings: number;
+    revision: number;
+  }[];
+  stores: { id: number; name: string; reviewed: boolean }[];
+  courierSettings: {
+    available: number;
+    payout_method: string;
+    payout_account: string;
+  } | null;
+};
+export type AuthResult = {
+  user?: { id: string; login: string } | null;
+  requiresTwoFactor?: boolean;
+  sessionToken?: string | null;
+  challengeToken?: string | null;
+};
+export type Verification = {
+  userId: string;
+  kind: "seller" | "courier";
+  companyName: string;
+  status: string;
+  note: string;
+  name: string;
+  phone: string;
+  issuingCountry: string;
+  documentType: string;
+};

@@ -1,4 +1,4 @@
-import { approvedIdentity } from "./identity-complete.js";
+import { approvedRole } from "./account-roles.js";
 const json = (data, status = 200) =>
   Response.json(data, { status, headers: { "Cache-Control": "no-store" } });
 const uuid = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/;
@@ -49,22 +49,9 @@ async function canEdit(env, user, seller) {
       : seller >= 1 && seller <= 10)
   )
     return true;
-  const check = await env.DB.prepare(
-    "SELECT kind,status,document_type,document_mime,issuing_country FROM identity_checks WHERE user_id=?",
-  )
-    .bind(user)
-    .first();
-  const profile = await env.DB.prepare(
-    "SELECT account_type FROM customers WHERE user_id=?",
-  )
-    .bind(user)
-    .first();
-  if (
-    profile?.account_type !== "seller" ||
-    check?.kind !== "seller" ||
-    !approvedIdentity(check, "seller")
-  )
-    return false;
+  const personal = await env.DB.prepare('SELECT seller_id FROM personal_sellers WHERE user_id=? AND country=?').bind(user,country).first();
+  if (personal?.seller_id === seller) return true;
+  if (!(await approvedRole(env,user,'seller'))) return false;
   return !!(await env.DB.prepare(
     "SELECT id FROM owned_stores WHERE user_id=? AND country=? AND id=?",
   )
@@ -72,9 +59,11 @@ async function canEdit(env, user, seller) {
     .first());
 }
 export async function handleProductPhotos(request, env) {
-  const user = request.headers.get("yaviya-user-id"),
-    url = new URL(request.url);
-  if (!user) return json({ error: "Sign in required" }, 401);
+  const identity = request.headers.get("yaviya-user-id"),
+    url = new URL(request.url),
+    publicImage = request.method === "GET" && url.pathname === "/api/product-photos/image",
+    user = identity || (url.searchParams.get("country") === "CG" ? "cg:anonymous" : "anonymous");
+  if (!identity && !publicImage) return json({ error: "Sign in required" }, 401);
   if (request.method !== "GET" && request.headers.get("origin") !== url.origin)
     return json({ error: "Origin rejected" }, 403);
   try {
@@ -87,7 +76,7 @@ export async function handleProductPhotos(request, env) {
       let row = await env.DB.prepare(
         "SELECT object_key,content_type FROM product_photos WHERE id=? AND user_id=?",
       )
-        .bind(id, user)
+        .bind(id, identity || "")
         .first();
       if (!row) {
         const shared = (
@@ -98,7 +87,7 @@ export async function handleProductPhotos(request, env) {
             .all()
         ).results.some((p) => {
           const value = JSON.parse(p.data);
-          return value.approved && value.visible;
+          return value.approved && value.visible && [value.img, ...(value.images || [])].some(src => src?.includes("photoId=" + id + "&"));
         });
         if (!shared) return json({ error: "Photo not found" }, 404);
         const published = await env.DB.prepare(

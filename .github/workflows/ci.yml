@@ -16,3 +16,27 @@ jobs:
       - run: npm ci
       - run: npm test
       - run: npm run build
+      - run: npm run test:next
+
+  mobile:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            mobile/package-lock.json
+      - run: npm ci
+      - run: npm ci
+        working-directory: mobile
+      - run: npm run typecheck && npm run lint && npm run export
+        working-directory: mobile
+        env:
+          EXPO_PUBLIC_API_URL: https://backend-yaviya.example
+      - run: npx playwright install --with-deps chromium
+        working-directory: mobile
+      - run: npm run test:web
+        working-directory: mobile

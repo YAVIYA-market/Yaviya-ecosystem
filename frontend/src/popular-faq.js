@@ -101,12 +101,12 @@ const popularQuestions = [
   {
     id: "returns",
     fr: [
-      "Que faire si le produit est abîmé ou ne correspond pas ?",
-      "Expliquez précisément le problème au vendeur ou au support avec votre numéro de commande et des photos. Conservez l’article et son emballage pendant l’examen de la demande. Les conditions définitives de retour et de remboursement doivent être publiées avant le lancement ; la démo ne traite aucun remboursement réel.",
+      "Comment demander un retour sous 72 h ?",
+      "Signalez votre demande de retour au service client dans les 72 heures suivant la réception. Indiquez votre numéro de commande, expliquez le problème et joignez les photos utiles. Conservez l’article et son emballage pendant l’examen du dossier. Les 72 heures concernent le signalement de la demande, pas le versement du remboursement. La démo ne traite aucun remboursement financier réel.",
     ],
     en: [
-      "What if an item is damaged or does not match?",
-      "Describe the issue to the seller or support with your order reference and photos. Keep the item and packaging while the request is reviewed. Final return and refund terms must be published before launch; the demo processes no real refunds.",
+      "How do I request a return within 72 hours?",
+      "Report your return request to customer service within 72 hours of receiving the order. Include your order reference, describe the problem and provide relevant photos. Keep the item and packaging while the request is reviewed. The 72-hour period is for reporting the request, not receiving a refund. The demo processes no real financial refunds.",
     ],
   },
   {

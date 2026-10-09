@@ -1,0 +1,7 @@
+.notice { display:flex; flex-wrap:wrap; align-items:center; gap:12px; padding:16px 24px; background:#fff7ed; color:#7c2d12; border-bottom:1px solid #fed7aa; }
+.notice button, .action { padding:12px 20px; background:#ea580c; color:white; border:0; border-radius:12px; font:inherit; font-weight:700; cursor:pointer; text-decoration:none; }
+.notice button:focus-visible, .action:focus-visible { outline:3px solid #9a3412; outline-offset:4px; }
+.page { min-height:100vh; display:grid; place-content:center; padding:24px; box-sizing:border-box; background:#fff7ed; color:#292524; font-family:system-ui,sans-serif; text-align:center; }
+.brand { font-size:32px; font-weight:900; color:#ea580c; text-decoration:none; }
+.card { max-width:520px; padding:32px; background:white; border:1px solid #fed7aa; border-radius:24px; }
+.card p { line-height:1.6; margin-bottom:28px; }
