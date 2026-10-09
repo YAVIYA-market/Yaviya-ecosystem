@@ -1,3 +1,4 @@
+import * as Linking from "expo-linking";
 import { useCallback, useEffect, useState } from "react";
 import { Text, View } from "react-native";
 import { api } from "../lib/api";
@@ -113,6 +114,7 @@ export function OrderCard({
       <Text style={styles.muted}>
         {o.city} · {o.commune} · {o.address}
       </Text>
+      {role === "courier" && <Button outline title="Ouvrir l’itinéraire GPS" onPress={()=>Linking.openURL("https://www.google.com/maps/dir/?api=1&destination="+encodeURIComponent([o.address,o.commune,o.city,"RD Congo"].join(", "))).catch(e=>setError(e.message))}/>}
       {o.items.map((i) => (
         <Text key={i.id} style={styles.text}>
           {i.q} × {i.title}
@@ -125,6 +127,7 @@ export function OrderCard({
       {o.courierName && (
         <Text style={styles.text}>Livreur : {o.courierName}</Text>
       )}
+      {o.returnStatus && <Text style={styles.text}>Retour : {o.returnStatus}</Text>}
       <ErrorText error={error} />
       {!o.cancelled && (
         <>

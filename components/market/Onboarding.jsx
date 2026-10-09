@@ -47,6 +47,8 @@ export default function Onboarding({
       if (!file) throw Error("Ajoutez la photo de votre pièce d’identité.");
       const body = new FormData();
       Object.entries(values).forEach(([k, v]) => body.set(k, String(v)));
+      body.set("kind", seller ? "seller" : "courier");
+      body.set("activityAddress", saved?.address || profile?.address || "");
       body.set("document", file);
       body.set("identityConfirmed", "true");
       body.set("courierPlan", "standard");

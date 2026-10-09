@@ -100,6 +100,8 @@ export default function Onboarding() {
       });
       const form = new FormData();
       for (const [k, v] of Object.entries({
+        kind: role,
+        activityAddress: address,
         companyName: company,
         companyRcm: rcm,
         unregistered: String(unregistered),

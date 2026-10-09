@@ -1,3 +1,4 @@
+import AccountHub from './AccountHub';
 import { useEffect, useState } from "react";
 import { api, amount, imageUrl } from "../../lib/market/api";
 import Orders from "./Orders";
@@ -9,7 +10,7 @@ import {
   WorkspaceSubscriptions,
   WorkspaceAdvertising,
 } from "./WorkspacePanels";
-function ProductEditor({ product, state, country, config, onSaved }) {
+export function ProductEditor({ product, state, country, config, onSaved }) {
   const [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
     [existingImages, setExistingImages] = useState(product?.images || []),
@@ -50,9 +51,10 @@ function ProductEditor({ product, state, country, config, onSaved }) {
       }
       if (!images.length)
         throw Error("Ajoutez au moins une photo de votre produit.");
-      await api("/api/marketplace/catalogue", {
+      await api(state.personal ? "/api/account-hub" : "/api/marketplace/catalogue", {
         country,
         body: {
+          ...(state.personal ? {action:"save_listing",product:{...product,id,seller,title:data.title,category:data.category,subcategory:data.subcategory,condition:data.condition || "used",price:Number(data.price),stock:1,desc:data.desc,images,img:images[0],visible:data.visible === "on",approved:false}} : {}),
           ...product,
           id,
           seller,
@@ -102,6 +104,7 @@ function ProductEditor({ product, state, country, config, onSaved }) {
           maxLength={100}
         />
       </label>
+      {state.personal && <label>État de l’article<select name="condition" defaultValue={product?.condition || "used"}><option value="used">D’occasion</option><option value="new">Neuf</option></select></label>}
       <div className="yv-fields">
         <label>
           Catégorie
@@ -384,6 +387,7 @@ export default function Dashboard({
           ...(role === "seller" ? [["subscriptions", "Abonnements"]] : []),
         ]
       : [["availability", "Disponibilité"]]),
+    ["tools", "Retours, règlements et service client"],
     ["messages", "Discussions"],
     ...(role === "admin"
       ? [
@@ -434,6 +438,7 @@ export default function Dashboard({
           ))}
         </nav>
         <div className="yv-dashboard-body">
+          {tab === "tools" && <AccountHub country={country} config={config} resource="finance" viewer={role} admin={role === "admin"}/>}
           {tab === "overview" && (
             <WorkspaceOverview
               state={state}

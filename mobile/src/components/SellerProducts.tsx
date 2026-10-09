@@ -9,10 +9,12 @@ import { Button, Card, ErrorText, Field, Select, styles, money } from "./ui";
 export function SellerProducts({
   data,
   admin = false,
+  personal = false,
   refresh,
 }: {
   data: MarketState;
   admin?: boolean;
+  personal?: boolean;
   refresh: () => Promise<void>;
 }) {
   const [editing, setEditing] = useState<Product | null>(null),
@@ -25,7 +27,7 @@ export function SellerProducts({
     setBusy(true);
     setError("");
     try {
-      await api("/api/marketplace/catalogue?country=CD", editing);
+      await api(personal ? '/api/account-hub?country=CD' : '/api/marketplace/catalogue?country=CD', personal ? {action:'save_listing',product:editing} : editing);
       setEditing(null);
       await refresh();
     } catch (e) {
@@ -82,6 +84,7 @@ export function SellerProducts({
               img: "",
               images: [],
               desc: "",
+              ...(personal ? {condition: "used" as const} : {}),
             })
           }
         />
@@ -94,6 +97,7 @@ export function SellerProducts({
             value={editing.title}
             onChangeText={(title) => change({ title })}
           />
+          {!personal && !editing.revision && <Select label="Boutique" options={data.sellerIds.map(String)} value={String(editing.seller)} onChange={v=>change({seller:Number(v),images:[],img:""})}/>}
           <Select
             label="Catégorie"
             options={market.categorySections.map((s) => String(s[0]))}
@@ -106,12 +110,13 @@ export function SellerProducts({
             value={String(editing.price)}
             onChangeText={(v) => change({ price: Number(v) })}
           />
-          <Field
+          {personal && <Select label="État de l’article" options={["new","used"]} value={editing.condition || "used"} onChange={v=>change({condition:v as "new" | "used"})}/>}
+          {!personal && <Field
             label="Quantité en stock · privée"
             keyboardType="numeric"
             value={String(editing.stock)}
             onChangeText={(v) => change({ stock: Number(v) })}
-          />
+          />}
           <Field
             label="Description"
             value={editing.desc}

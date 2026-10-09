@@ -216,6 +216,8 @@ function Order({ order, country, role, sellerIds, onRefresh }) {
         {order.paymentState || "Espèces à réception"} · Livraison :{" "}
         {amount(order.delivery?.fee, country)}
       </p>
+      {order.returnStatus && <p>Retour : {order.returnStatus}</p>}
+      {role === "courier" && <a target="_blank" rel="noopener noreferrer" href={"https://www.google.com/maps/dir/?api=1&destination="+encodeURIComponent([order.address,order.commune,order.city,country === "CG" ? "République du Congo" : "RD Congo"].join(", "))}>Ouvrir l’itinéraire GPS</a>}
       {role === "courier" && (
         <div className="yv-stat-grid">
           <p>

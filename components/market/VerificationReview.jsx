@@ -25,7 +25,7 @@ function ReviewCard({ row, country, config, busy, onDecide }) {
             <div><dt>Abonnement choisi</dt><dd>{seller ? ({ free: "Gratuit", plus: "Plus", premium: "Premium", business: "Business", enterprise: "Entreprise" }[row.sellerPlan] || row.sellerPlan || "Non renseigné") : row.courierPlan === "standard" ? "Standard" : row.courierPlan || "Non renseigné"}</dd></div>
             <div><dt>Soumis le</dt><dd>{row.submittedAt ? new Date(Number(row.submittedAt)).toLocaleDateString("fr-FR") : "Non renseigné"}</dd></div>
           </dl>
-          <a className="yv-review-document" target="_blank" rel="noreferrer" href={"/api/verification/document?userId=" + encodeURIComponent(row.userId) + "&country=" + country}>
+          <a className="yv-review-document" target="_blank" rel="noreferrer" href={"/api/verification/document?userId=" + encodeURIComponent(row.userId) + "&kind=" + row.kind + "&country=" + country}>
             Consulter la pièce privée <span aria-hidden="true">↗</span>
           </a>
           <small>Accès réservé au contrôle du dossier. Ouverture dans un nouvel onglet.</small>
@@ -88,7 +88,7 @@ export default function VerificationReview({ country, config, onRefresh }) {
       {error && <p className="yv-error" role="alert">{error}</p>}
       {loading ? <p role="status">Chargement des dossiers…</p> : <>
         <p className="yv-muted">{filtered.length} dossier(s) affiché(s)</p>
-        {filtered.map((row) => <ReviewCard key={row.userId + row.status} row={row} country={country} config={config} busy={busy} onDecide={decide} />)}
+        {filtered.map((row) => <ReviewCard key={row.userId + row.kind + row.status} row={row} country={country} config={config} busy={busy} onDecide={decide} />)}
         {!filtered.length && <div className="yv-workspace-empty"><h4>Aucun dossier dans cette sélection</h4><p>Les nouvelles demandes apparaîtront ici dès leur soumission.</p><button onClick={() => { setStatus("all"); setKind("all"); setQuery(""); }}>Voir tous les dossiers</button></div>}
       </>}
     </section>

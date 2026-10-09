@@ -336,6 +336,34 @@ try {
     .bind(order.id)
     .first();
   assert.equal(review.courier_user_id, accounts.courier.id);
+  await button('Mon profil').click();
+  await button('Mes dossiers service client').click();
+  await field('Votre message *').fill('Recette service client mobile');
+  await button('Ouvrir un dossier').click();
+  await page.getByText('Client : Recette service client mobile', {exact:true}).waitFor();
+  await button('Mon profil').click();
+  await button('Revendre comme particulier · commission 12 %').click();
+  await button('Accepter les 12 % et activer mes annonces').click();
+  await button('Ajouter un produit').click();
+  await field('Nom du produit *').fill('Guitare personnelle mobile');
+  await page.getByLabel('Prix (FC) *', {exact:true}).fill('10000');
+  await field('Description').fill('Annonce occasionnelle de recette');
+  const personalChooserPromise=page.waitForEvent('filechooser');
+  await button('Ajouter plusieurs photos').click();
+  await (await personalChooserPromise).setFiles({name:'personal.png',mimeType:'image/png',buffer:png});
+  await button('Retirer la photo 1').waitFor();
+  await button('Enregistrer le produit').click();
+  await page.getByText('Guitare personnelle mobile', {exact:true}).waitFor();
+  const personalRow=await db.prepare("SELECT data FROM market_products WHERE data LIKE '%Guitare personnelle mobile%'").first();
+  assert.equal(JSON.parse(personalRow.data).sellerKind,'particular');
+  assert.equal(JSON.parse(personalRow.data).approved,false);
+  await button('Mon profil').click();
+  await button('Mes demandes de retour et remboursement').click();
+  await button('Commande reçue : Choisir').click();
+  await button(order.id).click();
+  await field('Motif du retour *').fill('Recette demande retour mobile');
+  await button('Demander un retour').click();
+  await page.getByText('Recette demande retour mobile', {exact:true}).waitFor();
   await login("admin");
   await button("Votre espace professionnel").click();
   await page.getByRole("radio", { name: "Admin", exact: true }).click();
@@ -354,7 +382,7 @@ try {
   }
   assert.deepEqual(errors, []);
   console.log(
-    "Mobile UI : acheter maintenant, inscription acheteur, commande partagée, vendeur multi-photos, livraison, réception, évaluation du livreur, admin et aide validés.",
+    "Mobile UI : acheter maintenant, inscription acheteur, commande partagée, vendeur multi-photos, livraison, réception, évaluation du livreur, admin, aide, annonces personnelles, support et retours validés.",
   );
 } catch (error) {
   if (page) {

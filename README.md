@@ -101,3 +101,21 @@ Dans **Profil → Paramètres → Sécurité du compte**, l’option 2FA permet 
 « Besoin d’aide » ouvre le chatbot, également depuis chaque fiche produit. Les cartes et fiches présentent le nombre de comptes acheteurs ayant confirmé la réception ; les annulations sont exclues. Les statistiques vendeur montrent les visiteurs distincts et les achats de ses boutiques ; l’admin centralise les deux marchés, avec filtres par période et boutique. Les données sont enregistrées sur le serveur, sans exemples chiffrés dans ce nouvel onglet. Voir [les endpoints et définitions](docs/API.md#statistiques-produits-140).
 
 Avant l’activation sur l’hébergement : configurer la base persistante puis appliquer les migrations, notamment `0015_product_insights.sql`, avec `npm run db:migrate`. Tant que le service serveur est indisponible, les compteurs l’indiquent au lieu d’afficher zéro.
+
+## Application unique et recette par rôle — 9 octobre 2026
+
+Le [rapport d’audit](docs/UNIFIED_APP_AUDIT_20261009.md) distingue les parcours persistants, les démonstrations et les integrations non activées. La branche `migration/nextjs` contient les mises à jour web, mobile et backend. `/admin` ouvre le portail administrateur sécurisé.
+
+Recette locale isolée, sans connecter une base de production :
+
+```bash
+npm ci
+npm run demo:setup
+npm run demo:web
+```
+
+Ouvrir `http://localhost:3000`. Comptes de recette : `buyer@yaviya.example.test`, `particular@yaviya.example.test`, `seller@yaviya.example.test`, `courier@yaviya.example.test`, `admin@yaviya.example.test`. Mot de passe de recette uniquement : `Yaviya-demo-2026!`. La clé MFA locale est générée dans un fichier ignoré par Git ; aucune clé de production n’est nécessaire. Les identités prévalidées sont des fixtures locales, pas des validations KYC réelles. Ne jamais importer cette base en production.
+
+Les nouvelles fonctions sont dans Profil → outils YAVIYA et dans les espaces professionnels → Retours, règlements et service client. La revente particulière est distincte de la boutique et affiche son consentement à la commission de 12 %. Le mobile réutilise les mêmes API.
+
+Avant déploiement de cette version sur un backend PostgreSQL, appliquer `supabase/migrations/20261009170046_unified_market.sql`. Aucun paiement électronique n’est activé par cette migration. Les paramètres Expo / backend HTTPS et les clés de signature restent nécessaires pour un APK signé.

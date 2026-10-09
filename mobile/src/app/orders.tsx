@@ -24,6 +24,7 @@ export default function Orders() {
   return (
     <Page title={role === "buyer" ? "Vos commandes" : "Commandes à traiter"}>
       <ErrorText error={error} />
+      <Button outline title="Mon profil" onPress={()=>router.push("/profile")}/>
       <Button outline title="Actualiser le suivi" onPress={load} />
       {loading && <Loading />}
       {data?.orders.map((o) => (

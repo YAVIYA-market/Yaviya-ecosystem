@@ -1,3 +1,4 @@
+import { AccountHub } from '../components/AccountHub';
 import { useEffect, useState } from "react";
 import { Text } from "react-native";
 import { router } from "expo-router";
@@ -152,7 +153,7 @@ export default function Workspace() {
               </Text>
             </Card>
           )}
-          {!roles.seller && !roles.courier && (
+          {(!roles.seller || !roles.courier) && (
             <Card>
               <Text style={styles.heading}>
                 Votre boutique mérite une nouvelle vitrine.
@@ -204,6 +205,13 @@ export default function Workspace() {
             ...(role === "admin"
               ? [{ id: "verification", label: "Validation des comptes" }]
               : []),
+            ...(role === "seller" || role === "admin" ? [{id:"shops",label:"Boutiques"}] : []),
+            { id: "reviews", label: "Avis clients" },
+            { id: "finance", label: "Commissions et règlements" },
+            { id: "returns", label: "Retours" },
+            { id: "support", label: "Service client" },
+            { id: "subscriptions", label: "Abonnements" },
+            ...(role === "admin" ? [{id:"admin",label:"Comptes et sécurité"}] : []),
             { id: "chat", label: "Discussions" },
           ]}
         />
@@ -303,6 +311,7 @@ export default function Workspace() {
           ))}
         </>
       )}
+      {["finance","returns","support","subscriptions","admin","reviews","shops"].includes(tab) && <AccountHub key={tab+role} resource={tab} viewer={role} admin={role === "admin"}/>}
       {role === "admin" && tab === "verification" && <VerificationReviews />}
       {tab === "chat" && role !== "buyer" && (
         <>

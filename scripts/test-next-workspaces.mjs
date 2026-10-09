@@ -1,3 +1,5 @@
+import { TOTP } from "otpauth";
+import { randomBytes } from "node:crypto";
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
 import { mkdtemp, rm } from "node:fs/promises";
@@ -7,6 +9,7 @@ import { JSDOM, CookieJar, VirtualConsole } from "jsdom";
 import { createDatabase } from "../backend/database.js";
 import { createApplication } from "../backend/application.js";
 import { migrate } from "./migrate.mjs";
+process.env.MFA_ENCRYPTION_KEY = randomBytes(32).toString("hex");
 const directory = await mkdtemp(path.join(tmpdir(), "yaviya-workspaces-"));
 const sqlite = path.join(directory, "test.sqlite"),
   root = "http://127.0.0.1:3021";
@@ -77,6 +80,12 @@ for (const role of ["buyer", "seller", "courier", "admin", "pendingSeller"]) {
     await db.prepare("INSERT INTO identity_checks(user_id,kind,company_name,unregistered,seller_plan,document_type,object_key,file_name,status,issuing_country,document_mime,submitted_at) VALUES (?,'seller','Atelier Kivu · démo',1,'free','identity','fixture','piece-test.jpg','pending','CD','image/jpeg',?)").bind(user.id, Date.now()).run();
 }
 await db.prepare("INSERT INTO seller_follows(country,buyer_user_id,seller_id,followed_at) VALUES ('CD',?,10001,?)").bind(accounts.buyer.id,Date.now()).run();
+const adminSetup=await fixtureCall('/api/auth/mfa-setup',accounts.admin.cookie,{password:'Workspace-test-password-2026!'});
+assert.equal(adminSetup.status,200);
+const adminSecret=(await adminSetup.json()).secret;
+const adminEnable=await fixtureCall('/api/auth/mfa-enable',accounts.admin.cookie,{password:'Workspace-test-password-2026!',code:new TOTP({secret:adminSecret}).generate()});
+assert.equal(adminEnable.status,200);
+accounts.admin.cookie=adminEnable.headers.getSetCookie()[0].split(';')[0];
 const opportunityOrder = {
   id: "YV-WORKSPACE-MISSION",
   createdAt: Date.now(),

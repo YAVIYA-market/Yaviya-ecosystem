@@ -6,6 +6,7 @@ export function useCatalogue() {
   const [result, setResult] = useState<{
       catalogue: Product[];
       stores: Storefront[];
+      campaigns?: {id:string;title:string;image:string}[];
     }>({ catalogue: [], stores: [] }),
     [loading, setLoading] = useState(true),
     [error, setError] = useState("");
@@ -31,6 +32,7 @@ export function useCatalogue() {
   return {
     products: result.catalogue,
     stores: result.stores,
+    campaigns:result.campaigns || [],
     loading,
     error,
     load,

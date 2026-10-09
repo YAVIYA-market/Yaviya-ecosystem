@@ -1,3 +1,4 @@
+import AccountHub from './AccountHub';
 import useSellerFollows from "../../lib/market/useSellerFollows";
 import Invitation from "./Invitation";
 import Head from "next/head";
@@ -128,7 +129,7 @@ function Support({ faq, lang, user, country, onContact }) {
           Assistant automatique basé sur les réponses du centre d’aide.
         </small>
       </div>
-      <PopularQuestions
+<PopularQuestions
         faq={faq}
         lang={lang}
         user={user}
@@ -285,6 +286,7 @@ export default function MarketApp({ data, pageName = "index", content = [] }) {
   useEffect(() => setHydrated(true), []);
   const [products, setProducts] = useState(initialProducts),
     [shops, setShops] = useState(initialShops),
+    [campaigns,setCampaigns] = useState([]),
     [user, setUser] = useState(null),
     [profile, setProfile] = useState(null),
     [market, setMarket] = useState(null),
@@ -332,7 +334,7 @@ export default function MarketApp({ data, pageName = "index", content = [] }) {
     setMarket(value);
     setProfile(value.profile);
     setIsAdmin(value.roles.admin);
-    if (value.catalogue) setProducts(value.catalogue);
+    if (value.catalogue && role === "buyer") {setProducts(value.catalogue);setCampaigns(value.campaigns || []);}
     if (value.stores) setShops([...initialShops, ...value.stores]);
     return value;
   }
@@ -343,6 +345,7 @@ export default function MarketApp({ data, pageName = "index", content = [] }) {
       .then((d) => {
         if (live) {
           setProducts(d.catalogue);
+          setCampaigns(d.campaigns || []);
           setShops([...initialShops, ...d.stores]);
         }
       })
@@ -711,6 +714,7 @@ export default function MarketApp({ data, pageName = "index", content = [] }) {
       onboarding:
         screen?.role === "seller" ? "Devenir vendeur" : "Devenir livreur",
       account: "Mon Yaviya",
+      hub: "Mes outils YAVIYA",
       cart: "Mon panier",
       wishlist: "Mes favoris",
       checkout: "Finaliser mon achat",
@@ -1217,7 +1221,8 @@ export default function MarketApp({ data, pageName = "index", content = [] }) {
                 <p>Aucun produit trouvé. Essayez une autre recherche.</p>
               )}
             </section>
-            <PopularQuestions
+                  {campaigns.length>0 && <section className="yv-info-grid" aria-label="Publicités YAVIYA">{campaigns.map(c=><article key={c.id} className="yv-info-card"><p className="yv-eyebrow">PUBLICITÉ</p><img src={c.image} alt={c.title} style={{width:'100%',maxHeight:200,objectFit:'cover',borderRadius:16}}/><h3>{c.title}</h3></article>)}</section>}
+              <PopularQuestions
               faq={faq}
               lang={lang}
               user={user}
@@ -1619,6 +1624,7 @@ export default function MarketApp({ data, pageName = "index", content = [] }) {
               </p>
               <div className="yv-account-grid">
                 {[
+                  ["hub", "Annonces personnelles, adresses et portefeuille"],
                   ["orders", "Historique des commandes"],
                   ["support", "Service client"],
                   ["profile", "Adresse et coordonnées"],
@@ -1677,6 +1683,7 @@ export default function MarketApp({ data, pageName = "index", content = [] }) {
               <button onClick={logout}>Se déconnecter</button>
             </section>
           )}
+          {screen.type === "hub" && <AccountHub country={country} config={config}/>}
           {screen.type === "orders" && (
             <Orders
               country={country}

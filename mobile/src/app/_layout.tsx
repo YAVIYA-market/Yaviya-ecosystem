@@ -50,6 +50,7 @@ export default function Layout() {
           <Stack.Screen name="cart" options={{ title: "Panier" }} />
           <Stack.Screen name="favorites" options={{ title: "Favoris" }} />
           <Stack.Screen name="auth" options={{ title: "Mon compte" }} />
+          <Stack.Screen name="account-tools" options={{title:"Mon espace YAVIYA"}}/>
           <Stack.Screen name="profile" options={{ title: "Profil" }} />
           <Stack.Screen name="checkout" options={{ title: "Ma commande" }} />
           <Stack.Screen

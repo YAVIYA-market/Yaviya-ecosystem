@@ -1,4 +1,4 @@
-import { approvedIdentity } from "./identity-complete.js";
+import { approvedRole } from "./account-roles.js";
 const json = (data, status = 200) =>
   Response.json(data, { status, headers: { "Cache-Control": "no-store" } });
 const uuid = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/;
@@ -49,22 +49,9 @@ async function canEdit(env, user, seller) {
       : seller >= 1 && seller <= 10)
   )
     return true;
-  const check = await env.DB.prepare(
-    "SELECT kind,status,document_type,document_mime,issuing_country FROM identity_checks WHERE user_id=?",
-  )
-    .bind(user)
-    .first();
-  const profile = await env.DB.prepare(
-    "SELECT account_type FROM customers WHERE user_id=?",
-  )
-    .bind(user)
-    .first();
-  if (
-    profile?.account_type !== "seller" ||
-    check?.kind !== "seller" ||
-    !approvedIdentity(check, "seller")
-  )
-    return false;
+  const personal = await env.DB.prepare('SELECT seller_id FROM personal_sellers WHERE user_id=? AND country=?').bind(user,country).first();
+  if (personal?.seller_id === seller) return true;
+  if (!(await approvedRole(env,user,'seller'))) return false;
   return !!(await env.DB.prepare(
     "SELECT id FROM owned_stores WHERE user_id=? AND country=? AND id=?",
   )

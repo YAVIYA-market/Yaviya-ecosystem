@@ -3,13 +3,13 @@ import { Image, Platform, Text } from "react-native";
 import { api, apiBase, sessionHeaders } from "../lib/api";
 import type { Verification } from "../lib/types";
 import { Button, Card, ErrorText, Field, styles } from "./ui";
-function Document({ userId }: { userId: string }) {
+function Document({ userId,kind }: { userId: string;kind:string }) {
   const [src, setSrc] = useState(""),
     [error, setError] = useState("");
   useEffect(() => {
     const controller = new AbortController();
     let blobUrl = "";
-    const url = `${apiBase}/api/verification/document?country=CD&userId=${encodeURIComponent(userId)}`;
+    const url = `${apiBase}/api/verification/document?country=CD&userId=${encodeURIComponent(userId)}&kind=${kind}`;
     if (Platform.OS !== "web") return;
     fetch(url, {
       headers: sessionHeaders(),
@@ -28,11 +28,11 @@ function Document({ userId }: { userId: string }) {
       controller.abort();
       if (blobUrl) URL.revokeObjectURL(blobUrl);
     };
-  }, [userId]);
+  }, [userId,kind]);
   const documentSrc =
     Platform.OS === "web"
       ? src
-      : `${apiBase}/api/verification/document?country=CD&userId=${encodeURIComponent(userId)}`;
+      : `${apiBase}/api/verification/document?country=CD&userId=${encodeURIComponent(userId)}&kind=${kind}`;
   return (
     <>
       <ErrorText error={error} />
@@ -92,7 +92,7 @@ function Review({
         title={open ? "Masquer la pièce" : "Examiner la pièce d’identité"}
         onPress={() => setOpen(!open)}
       />
-      {open && <Document userId={row.userId} />}{" "}
+      {open && <Document userId={row.userId} kind={row.kind} />}{" "}
       {row.status === "pending" && (
         <>
           <Button
@@ -150,7 +150,7 @@ export function VerificationReviews() {
       <ErrorText error={error} />
       <Button outline title="Actualiser les dossiers" onPress={load} />
       {rows.map((row) => (
-        <Review key={row.userId} row={row} refresh={load} />
+        <Review key={row.userId + row.kind} row={row} refresh={load} />
       ))}
       {!rows.length && (
         <Text style={styles.text}>Aucun dossier à examiner.</Text>

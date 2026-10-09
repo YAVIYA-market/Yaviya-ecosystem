@@ -1,5 +1,7 @@
 export type Role = "buyer" | "seller" | "courier" | "admin";
 export type Product = {
+  condition?: "new" | "used";
+  sellerKind?: "particular" | "professional";
   id: number;
   seller: number;
   title: string;
@@ -52,11 +54,13 @@ export type Order = {
   courierExpenses: number;
   courierPayout: { status: string };
   events: string[];
+  returnStatus?: string | null;
 };
 export type MarketState = {
   profile: Profile | null;
   roles: Record<Role, boolean>;
   sellerIds: number[];
+  personalSellerId?: number | null;
   catalogue: Product[];
   orders: Order[];
   opportunities: {

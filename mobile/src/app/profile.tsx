@@ -103,6 +103,8 @@ export default function ProfileScreen() {
   return (
     <Page title={`Bonjour ${store.profile.name}`}>
       <ErrorText error={error} />
+      {Object.entries({listings:'Revendre comme particulier · commission 12 %',finance:'Portefeuille et commissions',addresses:'Mes adresses enregistrées',returns:'Mes demandes de retour et remboursement',support:'Mes dossiers service client',subscriptions:'Abonnement livraison et vendeur'}).map(([resource,title])=><Button key={resource} outline title={title} onPress={()=>router.push({pathname:'/account-tools',params:{resource}})}/>)}
+
       {message && <Text style={styles.text}>{message}</Text>}
       <Card>
         <Text style={styles.muted}>

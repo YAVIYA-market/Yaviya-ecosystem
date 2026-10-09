@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { FlatList, Pressable, Text, View } from "react-native";
+import { FlatList, Image, Pressable, Text, View } from "react-native";
 import { router } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
@@ -15,7 +15,7 @@ import { ProductCard } from "../components/ProductCard";
 import { useCatalogue } from "../lib/catalogue";
 import market from "../lib/market.json";
 export default function Catalogue() {
-  const { products, loading, error, load } = useCatalogue();
+  const { products, campaigns, loading, error, load } = useCatalogue();
   const [query, setQuery] = useState(""),
     [category, setCategory] = useState("Toutes"),
     [sort, setSort] = useState("Recommandés");
@@ -43,6 +43,7 @@ export default function Catalogue() {
         renderItem={({ item }) => <ProductCard product={item} />}
         ListHeaderComponent={
           <View style={{ gap: 16, paddingBottom: 16 }}>
+            {campaigns.map(c=><Card key={c.id}><Text style={styles.muted}>Publicité</Text><Image source={{uri:c.image}} accessibilityLabel={c.title} style={{height:140,width:"100%",borderRadius:12}}/><Text style={styles.heading}>{c.title}</Text></Card>)}
             <View style={styles.row}>
               <Button
                 outline

@@ -1,3 +1,5 @@
+import { publicCampaigns } from './admin-content.js';
+import { approvedRole } from './account-roles.js';
 // Only approved, visible product data. No account or order identifiers are public.
 export async function handlePublicCatalogue(request, env) {
   if (request.method !== "GET")
@@ -7,7 +9,7 @@ export async function handlePublicCatalogue(request, env) {
     return Response.json({ error: "Marché invalide" }, { status: 400 });
   const rows = (
     await env.DB.prepare(
-      "SELECT data,stock FROM market_products WHERE country=?",
+      "SELECT data,stock FROM market_products p WHERE country=? AND NOT EXISTS (SELECT 1 FROM account_controls a WHERE a.user_id=p.owner_user_id AND a.suspended=1)",
     )
       .bind(country)
       .all()
@@ -32,26 +34,19 @@ export async function handlePublicCatalogue(request, env) {
           "images",
           "desc",
           "family",
+          "sellerKind",
+          "condition",
           "rating",
         ]
           .filter((k) => p[k] !== undefined)
           .map((k) => [k, p[k]]),
       ),
     );
-  const stores = (
-    await env.DB.prepare(
-      "SELECT s.id,s.name,s.country FROM owned_stores s JOIN identity_checks i ON i.user_id=s.user_id WHERE s.country=? AND i.status=?",
-    )
-      .bind(country, "approved")
-      .all()
-  ).results.map((s) => ({
-    id: s.id + 10000,
-    name: s.name,
-    country: s.country,
-    reviewed: true,
-  }));
+  const storeRows=(await env.DB.prepare('SELECT s.id,s.name,s.country,s.user_id FROM owned_stores s LEFT JOIN account_controls a ON a.user_id=s.user_id WHERE s.country=? AND COALESCE(a.suspended,0)=0').bind(country).all()).results;
+  const stores=[];
+  for(const row of storeRows) if(await approvedRole(env,row.user_id,'seller')) stores.push({id:row.id+10000,name:row.name,country:row.country,reviewed:true});
   return Response.json(
-    { catalogue, stores },
+    { catalogue, stores, campaigns:await publicCampaigns(env,country) },
     { headers: { "Cache-Control": "no-store" } },
   );
 }
